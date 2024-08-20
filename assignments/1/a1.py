@@ -1,6 +1,7 @@
 import numpy as np
 import matplotlib.pyplot as plt
 import pandas as pd
+import seaborn as sns
 import sys
 import time
 
@@ -9,32 +10,71 @@ from models.knn.knn import KNN
 
 from score import Scores
 
+# Task 1
+
+# Load data
+df = pd.read_csv("./../../data/external/spotify.csv")
+df = df.drop(columns=['Unnamed: 0'])
+df = df.drop_duplicates(subset='track_id', keep="first")
+df_numerical = df.select_dtypes(include=['number'])
+
+# normalizing data
+def normalize(df):
+    return (df - df.min()) / (df.max() - df.min())
+df_numerical = normalize(df_numerical)
+
+# Plotting data
+
+# Historgram
+# df_numerical.hist(bins=50, figsize=(15, 10))
+# plt.show()
+
+# Boxplot
+# df_numerical.boxplot(figsize=(15, 10))
+# plt.show()
+
+# Violin plot
+# sns.violinplot(data=df_numerical)
+# plt.show()
+
+# Pairwise Scatterplot
+# sns.pairplot(df_numerical)
+# plt.show()
+
+
+# Task 3
+
+# suffle the data
+df = df.sample(frac=1).reset_index(drop=True)
+
+# split the data
+train_size = int(0.8 * len(df))
+validate_size = int(0.1 * len(df))
+test_size = len(df) - train_size - validate_size
+
+df = df.drop(columns=['key', 'mode'])
+df_train, df_validate, df_test = np.split(df, [train_size, train_size + validate_size])
+
+
 # Load training data
-df_train = pd.read_csv("./train.csv")
-# df_train = pd.read_csv("./../../data/external/spotify-2/train.csv")
-df_train = df_train.drop_duplicates(subset='track_id', keep="first")
-df_train = df_train.drop(columns=['Unnamed: 0'])
 x_train = df_train.select_dtypes(include=['number'])
-# drop columns with name intrumentalness, mode, duration_ms, popularity
-# x_train = x_train.drop(columns=['popularity', 'duration_ms', 'danceability', 'energy', 'key', 'loudness', 'mode', 'speechiness', 'acousticness', 'instrumentalness', 'liveness', 'valence', 'tempo', 'time_signature'])
-x_train = x_train[['popularity', 'duration_ms', 'danceability', 'energy', 'loudness', 'speechiness', 'acousticness', 'instrumentalness', 'liveness', 'valence', 'tempo', 'time_signature']]
+# x_train.drop_duplicates(subset='track_id', keep='first')
 y_train = df_train['track_genre']
 
 # Load test data
-df_test = pd.read_csv("./test.csv")
-# df_test = pd.read_csv("./../../data/external/spotify-2/test.csv")
-df_test = df_test.drop_duplicates(subset='track_id', keep="first")
-df_test = df_test.drop(columns=['Unnamed: 0'])
 x_test = df_test.select_dtypes(include=['number'])
-# x_test = x_test.drop(columns=['popularity', 'duration_ms', 'danceability', 'energy', 'key', 'loudness', 'mode', 'speechiness', 'acousticness', 'instrumentalness', 'liveness', 'valence', 'tempo', 'time_signature'])
-x_test = x_test[['popularity', 'duration_ms', 'danceability', 'energy', 'loudness', 'speechiness', 'acousticness', 'instrumentalness', 'liveness', 'valence', 'tempo', 'time_signature']]
+# x_test.drop_duplicates(subset='track_id', keep='first')
 y_test = df_test['track_genre']
 
-# normalize the data 
+# Load validation data
+x_validate = df_validate.select_dtypes(include=['number'])
+# x_validate.drop_duplicates(subset='track_id', keep='first')
+y_validate = df_validate['track_genre']
 
-x_train = (x_train - x_train.mean()) / x_train.std()
-x_test = (x_test - x_test.mean()) / x_test.std()
-
+# Normalize data
+x_train = normalize(x_train)
+x_test = normalize(x_test)
+x_validate = normalize(x_validate)
 
 # Fit KNN model
 k = 75
@@ -43,52 +83,64 @@ knn.fit(x_train, y_train)
 
 
 # taking only 100 samples for faster runtime 
-# x_test = x_test.iloc[:1000]
-# y_test = y_test.iloc[:1000]
+x_validate = x_validate.iloc[:100]
+y_validate = y_validate.iloc[:100]
 
-# Measure the runtime of the predict method
-start_time_manhattan = time.time()
-
-y_pred = knn.predict(x_test, "manhattan")
-best_accuracy_manhattan = np.mean(y_pred == y_test)
-# for i in range(50, 250, 25):
-#     knn.k = i
-#     y_pred = knn.predict(x_test, "manhattan")
-#     accuracy = np.mean(y_pred == y_test)
-#     best_accuracy_manhattan = max(best_accuracy_manhattan, accuracy)
-#     print(f"For i = {i} and mAccuracy: {accuracy:.4f}")
+y_pred = knn.predict(x_validate, distance_metric='euclidean')
+print(np.mean(y_pred == y_validate))
 
 
-print(f"Best Accuracy Manhattan: {100*best_accuracy_manhattan}%")
 
-end_time_manhattan = time.time() 
-run_time_manhattan = end_time_manhattan - start_time_manhattan
-print(f"Prediction Runtime: {run_time_manhattan:.4f} seconds")
+# tune for k
+def tune_k(k_values, x_validate, y_validate, distance_metric):
+    accuracy_values = []
+    for k in k_values:
+        knn.k = k
+        y_pred = knn.predict(x_validate, distance_metric=distance_metric)
+        accuracy = np.mean(y_pred == y_validate)
+        accuracy = int(accuracy * 100)
+        accuracy_values.append((accuracy, (k, distance_metric)))
+    return accuracy_values
 
-# start_time_euclidean = time.time()
+k_values = range(10, 100, 10)
 
-# y_pred = knn.predict(x_test, "euclidean")
-# best_accuracy_euclidean = np.mean(y_pred == y_test)
-# # for i in range(50, 250, 25):
-# #     knn.k = i
-# #     y_pred = knn.predict(x_test, "euclidean")
-# #     accuracy = np.mean(y_pred == y_test)
-# #     best_accuracy_euclidean = max(best_accuracy_euclidean, accuracy)
-# #     print(f"For i = {i} and eAccuracy: {accuracy:.4f}")
+# manhattan tuning for k
+accuracy_values_manhattan = tune_k(k_values, x_validate, y_validate, 'manhattan')
+    
+# euclidean tuning for k
+accuracy_values_euclidean = tune_k(k_values, x_validate, y_validate, 'euclidean')
+
+# cosine tuning for k
+accuracy_values_cosine = tune_k(k_values, x_validate, y_validate, 'cosine')
 
 
-# print(f"Best Accuracy Euclidean: {100*best_accuracy_euclidean:.4f}%")
+all_pairs = accuracy_values_manhattan + accuracy_values_euclidean + accuracy_values_cosine
 
-# end_time_euclidean = time.time()
-# run_time_euclidean = end_time_euclidean - start_time_euclidean
-# print(f"Prediction Runtime: {run_time_euclidean:.4f} seconds")
+all_pairs.sort(reverse=True)
+print("Top 10 pairs")
+print(all_pairs[:10])
 
-# Calculate scores
-scores = Scores(y_test, y_pred)
-print(f"Accuracy: {100*scores.accuracy:.4f}%")
-print(f"Micro Precision: {scores.micro_precision:.4f}")
-print(f"Micro Recall: {scores.micro_recall:.4f}")
-print(f"Micro F1: {scores.micro_f1:.4f}")
-print(f"Macro Precision: {scores.macro_precision:.4f}")
-print(f"Macro Recall: {scores.macro_recall:.4f}")
-print(f"Macro F1: {scores.macro_f1:.4f}")
+# k vs accuracy plot
+
+def plot_k_vs_accuracy(accuracy_values_pairs):
+    distance_metric = accuracy_values_pairs[0][1][1]
+    accuracy_values = [x[0] for x in accuracy_values_pairs]
+    k_values = [x[1][0] for x in accuracy_values_pairs]
+    plt.plot(k_values, accuracy_values)
+    plt.xlabel('k')
+    plt.ylabel('accuracy')
+    plt.title(f'k vs accuracy for {distance_metric}')
+    plt.show()
+
+plot_k_vs_accuracy(accuracy_values_manhattan)
+plot_k_vs_accuracy(accuracy_values_euclidean)
+plot_k_vs_accuracy(accuracy_values_cosine)
+
+# Test for best k and distance metric
+best_k = all_pairs[0][1][0]
+best_distance_metric = all_pairs[0][1][1]
+
+knn.k = 30
+y_pred = knn.predict(x_test, distance_metric='manhattan')
+accuracy = np.mean(y_pred == y_test)
+print(f"Accuracy for test data for best k: {best_k} and distance metric: {best_distance_metric} is {accuracy*100}%")
