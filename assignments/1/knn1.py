@@ -3,12 +3,10 @@ import matplotlib.pyplot as plt
 import pandas as pd
 import seaborn as sns
 import sys
-import time
 
 sys.path.append('./../../')
 from models.knn.knn import KNN
-
-from score import Scores
+from performance_measures.knn_score import Scores
 
 # Task 1
 
@@ -140,7 +138,7 @@ plot_k_vs_accuracy(accuracy_values_cosine)
 best_k = all_pairs[0][1][0]
 best_distance_metric = all_pairs[0][1][1]
 
-knn.k = 30
-y_pred = knn.predict(x_test, distance_metric='manhattan')
+knn.k = best_k
+y_pred = knn.predict(x_test, distance_metric=best_distance_metric)
 accuracy = np.mean(y_pred == y_test)
 print(f"Accuracy for test data for best k: {best_k} and distance metric: {best_distance_metric} is {accuracy*100}%")
