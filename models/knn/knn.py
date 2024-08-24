@@ -5,12 +5,14 @@ class KNN:
         self.k = k
 
     def fit(self, x_train, y_train):
-        self.x_train = x_train
-        self.y_train = y_train
+        self.x_train = x_train.to_numpy()
+        self.y_train = y_train.to_numpy()
+        self.norm_x_train = np.linalg.norm(self.x_train, axis=1)
         
     def predict(self, x_test, distance_metric='euclidean'):
         y_pred = []
-        for x in x_test.values:
+        x_test = x_test.to_numpy()
+        for x in x_test:
             y_pred.append(self.predict_one(x, distance_metric))
         return np.array(y_pred)
     
@@ -20,7 +22,14 @@ class KNN:
         elif distance_metric == 'manhattan':
             distances = np.sum(np.abs(self.x_train - x), axis=1)
         elif distance_metric == 'cosine':
-            distances = np.dot(self.x_train, x) / (np.linalg.norm(self.x_train) * np.linalg.norm(x))
-        nearest_indices = np.argsort(distances)[:self.k]
-        nearest_labels = self.y_train.iloc[nearest_indices]
-        return nearest_labels.mode().values[0]
+            # For this looked up online resourses for how to calculate cosine distance efficiently
+            dot_product = np.dot(self.x_train, x)
+            norm_x = np.linalg.norm(x)
+            cosine_similarity = dot_product / (norm_x * self.norm_x_train)
+            distances = 1 - cosine_similarity
+
+        # For this also looked up online resourses for how to get k nearest neighbours efficiently  
+        nearest_indices = np.argpartition(distances, self.k)[:self.k]
+        nearest_labels = self.y_train[nearest_indices]      
+        index, counts = np.unique(nearest_labels, return_counts=True)
+        return index[np.argmax(counts)]

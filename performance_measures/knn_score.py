@@ -11,8 +11,6 @@ class Scores:
 
     def createConfusionMatrix(self, y_test, y_pred):
         test_unique = np.sort(np.unique(y_test))
-        pred_unique = np.sort(np.unique(y_pred))
-
         matrix = np.zeros((len(test_unique), len(test_unique)))
         for i in range(len(test_unique)):
             for j in range(len(test_unique)):
@@ -58,8 +56,3 @@ class Scores:
         self.macro_precision = np.mean(precision)
         self.macro_recall = np.mean(recall)
         self.macro_f1 = np.mean(f1)
-
-
-        
-        
-            
