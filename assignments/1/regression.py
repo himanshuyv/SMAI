@@ -32,19 +32,18 @@ x_train = df_train['x'].to_numpy()
 y_train = df_train['y'].to_numpy()
 
 # Fit the model
-model.fit(x_train, y_train, create_gif=True)
+model.fit(x_train, y_train, create_gif=False)
 
-def create_gif(n_images):
+def create_gif(n_images, name):
     frames = []
     for i in range(n_images):
         img_path = f'./figures/gif_images/{i}.png'
         frame = imageio.imread(img_path)
         frames.append(frame)
-    gif_path = './figures/linear_regression.gif'
-    imageio.mimsave(gif_path, frames, fps=10)
+    imageio.mimsave(name, frames, fps=10)
    
 # n_images = model.epock_to_converge // 100
-# create_gif(n_images)
+# create_gif(n_images, "./figures/degree_1.gif")
 
 y_train = y_train[np.argsort(x_train)]
 x_train = np.sort(x_train)
@@ -65,10 +64,10 @@ plt.show()
 model = LinearRegression(learning_rate=0.01, k=20)
 
 # Fit the model
-model.fit(x_train, y_train, create_gif=True)
+model.fit(x_train, y_train, create_gif=False)
 
-n_images = model.epock_to_converge // 100
-create_gif(n_images)
+# n_images = model.epock_to_converge // 100
+# create_gif(n_images)
 
 y_train = y_train[np.argsort(x_train)]
 x_train = np.sort(x_train)
@@ -110,3 +109,33 @@ print(f'Best k: {best_k}')
 print(f'Minimum MSE: {min_error}')
 
 mse_list = sorted(mse_list)
+
+# Test the model
+
+# Load test data
+x_test = df_test['x'].to_numpy()
+y_test = df_test['y'].to_numpy()
+
+# Fit the model
+model = LinearRegression(learning_rate=0.01, k=best_k)
+model.fit(x_train, y_train)
+
+# Predict
+y_pred = model.predict(x_test)
+
+# Evaluate
+score = Scores(y_test, y_pred)
+print(f'MSE: {score.mse.round(6)}')
+print(f'Std: {score.std.round(6)}')
+print(f'Variance: {score.variance.round(6)}')
+
+# Create GIF for 5 values of k
+
+k_values = [1, 5, 10, 15, 20]
+
+for k in k_values:
+    model = LinearRegression(learning_rate=0.01, k=k)
+    model.fit(x_train, y_train, create_gif=True)
+
+    n_images = model.epock_to_converge // 100
+    create_gif(n_images, f'./figures/gif_{k}.gif')
