@@ -185,14 +185,14 @@ For plotting the k vs accuracy graph I have used 10 different values of k rangin
 
 K vs Accuracy for different distance metrics are following.
 
-1. 
-    Manhattan
+1. Manhattan
+
     ![Manhattan](./figures/k_vs_accuracy_manhattan.png)
-2. 
-    Euclidean
+2. Euclidean
+
     ![Euclidean](./figures/k_vs_accuracy_euclidean.png)
-3. 
-    Cosine
+3. Cosine
+
     ![Cosine](./figures/k_vs_accuracy_cosine.png)
 
 As we can see from the plot that the best accuracy for each of the distance metric is at k = 20 to k = 40. The accuracy is highest for manhattan distance metric.
@@ -401,6 +401,7 @@ First I have suffled the dataset and splitted it in (80:10:10) ratio for trainin
 ### Degree 1
 
 Regression line for degree 1 is following.
+
 ![Degree 1](./figures/regression_line_degree_1.png)
 
 The mse, variance and standard deviation for degree 1 is following.
@@ -422,14 +423,18 @@ Variance: 0.7451354215899668
 ### Degree k
 
 Regession line for degree k = 20 is following.
+    
 ![Degree k](./figures/regression_line_degree_20.png)
 
 For tuning I am using the validation set. 
 Following is the graph of k vs MSE.
+    
 ![Degree k](./figures/k_vs_mse_regression.png)
+
 Here we can see that the mse for k = 10 to 20 is almost same.
 
 K vs MSE, Variance and Standard for both Train and Test Split.
+
 ![Degree k](./figures/k_vs_mse_std_variance_forTrainTestSplit.png)
 
 K that minimizes the MSE is 10 in my case but this also depends on the suffling of the data. 
@@ -443,6 +448,7 @@ For tuning the learning rate I am using 4 values of learning rate (0.1, 0.01, 0.
 As the learning rate decreases the model takes more epochs to converge. The best learning rate that I got is 0.01. Which is optimal for mse as well as the number of epochs to converge.
 
 The graph for learning rate vs MSE, Epoch to converge is following.
+
 ![Learning Rate](./figures/learning_rate_vs_mse_epoch.png)
 
 ```
@@ -463,23 +469,28 @@ The gif for the training of the model for 5 different values of k is following.
 
 1. k = 1
 [view](./figures/gif_1.gif)
+
 ![gif_1](./figures/gif_1.gif)
 
 
 2. k = 5
 [view](./figures/gif_5.gif)
+
 ![gif_5](./figures/gif_5.gif)
 
 3. k = 10
 [view](./figures/gif_10.gif)
+
 ![gif_10](./figures/gif_10.gif)
 
 4. k = 15
 [view](./figures/gif_15.gif)
+
 ![gif_15](./figures/gif_15.gif)
 
 5. k = 20
 [view](./figures/gif_20.gif)
+
 ![gif_20](./figures/gif_20.gif)
 
 
@@ -489,73 +500,78 @@ Random Initialization of the weights and bias for the model will lead to same re
 ### Regularization
 
 The regression line for No Regularization with k = 5 ans its metrics are following.
+
 ![No Regularization](./figures/no_regularization_k5.png)
 
 ```
 Train Metrics
 k=5, No Regularization
-MSE: 0.01097159561582553
-STD: 0.4688540348275144
-Variance: 0.21982410597404012
+MSE: 0.01067210174166239
+STD: 0.4780552650748967
+Variance: 0.22853683646582976
 
 Test Metrics
 k=5, No Regularization
-MSE: 0.022202022174420768
-STD: 0.3456165310590047
-Variance: 0.11945078654125997
+MSE: 0.006148386276774819
+STD: 0.5358841663156478
+Variance: 0.2871718397078169
 ```
 
 The regression line for k = 20 ans no regularization ans its metrics are following.
+
 ![No Regularization](./figures/no_regularization_k20.png)
 
 ```
 Train Metrics
 k=20, No Regularization
-MSE: 0.01012555880429296
-STD: 0.47118411258353277
-Variance: 0.22201446795113128
+MSE: 0.010531000006956137
+STD: 0.47824362619142763
+Variance: 0.22871696599272598
 
 Test Metrics
 k=20, No Regularization
-MSE: 0.021472082174669425
-STD: 0.341292437416864
-Variance: 0.11648052783794403
+MSE: 0.0066545946507947755
+STD: 0.5319178964797703
+Variance: 0.28293664859546364
 ```
 The regression line for L1 Regularization with k = 20 ans its metrics are following.
+
 ![L1 Regularization](./figures/l1_regularization_k20.png)
 
 ```
 Train Metrics
 k=20, L1 Regularization
-MSE: 0.015707628873725118
-STD: 0.43299028395810857
-Variance: 0.1874805860021235
+MSE: 0.01263954846788254
+STD: 0.45478910483228974
+Variance: 0.20683312987415542
 
 Test Metrics
 k=20, L1 Regularization
-MSE: 0.030565101566008303
-STD: 0.2950431408839279
-Variance: 0.08705045498265332
+MSE: 0.005805340728023509
+STD: 0.5186726524830672
+Variance: 0.26902132043382054
 ```
 
 The regression line for L2 Regularization with k = 20 ans its metrics are following.
+
 ![L2 Regularization](./figures/l2_regularization_k20.png)
 ```
 Train Metrics
 k=20, L2 Regularization
-MSE: 0.011001926944055522
-STD: 0.46028024799156636
-Variance: 0.21185790669117782
+MSE: 0.011413125281680392
+STD: 0.4636032806055896
+Variance: 0.21492800178826502
 
 Test Metrics
 k=20, L2 Regularization
-MSE: 0.023498125044350466
-STD: 0.32754325549029223
-Variance: 0.10728458421717883
+MSE: 0.006354597552865536
+STD: 0.5193731997758689
+Variance: 0.26974852064542465
 ```
 
 
-From the given dataset, I am not seeing the ovefitting for any value fo k. Hence the regularization is not helping much in this case. The mse is almost same for all the regularization types.
+From the given dataset, I am not seeing the ovefitting well for any value fo k. Hence the regularization is not helping much in this case. The mse is almost same for all the regularization types. 
+In this particular run the L1 regularization is performing better as the MSE for k = 20, the MSE decreased a little.
 
 # References
 ### For plotting, labelling, other syntactical references I have taken help from the internet resources ans Copilot.
