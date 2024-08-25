@@ -16,10 +16,6 @@ class Scores:
             for j in range(len(test_unique)):
                 matrix[i, j] = np.sum((y_pred == test_unique[i]) & (y_test == test_unique[j]))
             
-        # for i in range(matrix.shape[0]):
-        #     for j in range(matrix.shape[1]):
-        #         print(f"{matrix[i, j]:.0f}", end=" ")
-        #     print()
         self.confusion_matrix = matrix
 
     def calculateMicroScores(self):

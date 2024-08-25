@@ -2,16 +2,16 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 class LinearRegression:
-    def __init__(self, n_Epochs=10000, learning_rate=0.001, k=1, error_threshold=1e-6, alpha=0.01, regularization=None):
+    def __init__(self, n_Epochs=1000000, learning_rate=0.001, k=1, error_threshold=1e-6, lambda_=0.01, regularization=None):
         self.n_Epochs = n_Epochs
         self.learning_rate = learning_rate
         self.k = k
         self.mse_list = []
         self.variance_list = []
         self.std_list = []
-        self.epock_to_converge = n_Epochs
+        self.epoch_to_converge = n_Epochs
         self.error_threshold = error_threshold
-        self.alpha = alpha  
+        self.lambda_ = lambda_  
         self.regularization = regularization
 
     def fit(self, x_train, y_train, create_gif=False):
@@ -36,7 +36,7 @@ class LinearRegression:
 
             if i > 2:
                 if abs(self.mse_list[i - 1] - self.mse_list[i - 2]) < self.error_threshold:
-                    self.epock_to_converge = i
+                    self.epoch_to_converge = i
                     break
 
             if create_gif and i % 100 == 0:
@@ -55,10 +55,10 @@ class LinearRegression:
         db = (1 / self.n_samples) * np.sum(y_pred - self.y_train)
 
         if self.regularization == 'l1':
-            reg_term = self.alpha * np.sign(self.weights)
+            reg_term = self.lambda_ * np.sign(self.weights)
             self.weights -= self.learning_rate * (dW + reg_term)
         elif self.regularization == 'l2':
-            reg_term = self.alpha * self.weights
+            reg_term = self.lambda_ * self.weights
             self.weights -= self.learning_rate * (dW + reg_term)
         else:
             self.weights -= self.learning_rate * dW
