@@ -213,11 +213,11 @@ y_mse = [x[0] for x in inference_list]
 y_n = [x[1] for x in inference_list]
 
 ax[0].plot(x_idx, y_mse)
-ax[0].set_xlabel('Learning Rate (log scale)')
+ax[0].set_xlabel('Learning Rate (logbase 10 (learning rate))')
 ax[0].set_ylabel('MSE')
 
 ax[1].plot(x_idx, y_n)
-ax[1].set_xlabel('Learning Rate (log scale)')
+ax[1].set_xlabel('Learning Rate (logbase 10 (learning rate))')
 ax[1].set_ylabel('Epoch to converge')
 plt.savefig('./figures/learning_rate_vs_mse_epoch.png')
 

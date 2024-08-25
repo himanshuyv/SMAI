@@ -13,8 +13,11 @@ from performance_measures.regression_score import Scores
 # Load data
 df = pd.read_csv("./../../data/external/regularisation.csv")
 
+lambda_ = 0.00001
+error_threshold = 1e-8
+
 # initialize model
-model = LinearRegression(learning_rate=0.01, k=5, error_threshold=1e-4)
+model = LinearRegression(learning_rate=0.01, k=5, error_threshold=error_threshold)
 
 # Suffle and split the data
 df = df.sample(frac=1).reset_index(drop=True)
@@ -47,12 +50,12 @@ plt.savefig('./figures/no_regularization_k5.png')
 x_test = df_test['x'].to_numpy()
 y_test = df_test['y'].to_numpy()
 
-print("Train Metrics")
-print("k=5, No Regularization")
-print(f'MSE: {model.mse_list[-1]}')
-print(f'STD: {model.std_list[-1]}')
-print(f'Variance: {model.variance_list[-1]}')
-print()
+# print("Train Metrics")
+# print("k=5, No Regularization")
+# print(f'MSE: {model.mse_list[-1]}')
+# print(f'STD: {model.std_list[-1]}')
+# print(f'Variance: {model.variance_list[-1]}')
+# print()
 
 y_pred = model.predict(x_test)
 scores = Scores(y_test, y_pred)
@@ -78,12 +81,12 @@ plt.ylabel('Y')
 plt.title('Regression line for k=20 and No Regularization')
 plt.savefig('./figures/no_regularization_k20.png')
 
-print("Train Metrics")
-print("k=20, No Regularization")
-print(f'MSE: {model.mse_list[-1]}')
-print(f'STD: {model.std_list[-1]}')
-print(f'Variance: {model.variance_list[-1]}')
-print()
+# print("Train Metrics")
+# print("k=20, No Regularization")
+# print(f'MSE: {model.mse_list[-1]}')
+# print(f'STD: {model.std_list[-1]}')
+# print(f'Variance: {model.variance_list[-1]}')
+# print()
 
 y_pred = model.predict(x_test)
 scores = Scores(y_test, y_pred)
@@ -97,8 +100,9 @@ print()
 
 # Task 2: Regularization
 
+
 # initialize model
-model = LinearRegression(learning_rate=0.01, k=20, regularization='l1', lambda_=0.0001, error_threshold=1e-4)
+model = LinearRegression(learning_rate=0.01, k=20, regularization='l1', lambda_=lambda_, error_threshold=error_threshold)
 
 # Fit the model
 model.fit(x_train, y_train)
@@ -111,12 +115,12 @@ plt.ylabel('Y')
 plt.title('Regression line for L1 Regularization')
 plt.savefig('./figures/l1_regularization_k20.png')
 
-print("Train Metrics")
-print("k=20, L1 Regularization")
-print(f'MSE: {model.mse_list[-1]}')
-print(f'STD: {model.std_list[-1]}')
-print(f'Variance: {model.variance_list[-1]}')
-print()
+# print("Train Metrics")
+# print("k=20, L1 Regularization")
+# print(f'MSE: {model.mse_list[-1]}')
+# print(f'STD: {model.std_list[-1]}')
+# print(f'Variance: {model.variance_list[-1]}')
+# print()
 
 y_pred = model.predict(x_test)
 scores = Scores(y_test, y_pred)
@@ -129,7 +133,7 @@ print(f'Variance: {scores.variance}')
 print()
 
 # initialize model
-model = LinearRegression(learning_rate=0.01, k=20, regularization='l2', lambda_=0.0001, error_threshold=1e-4)
+model = LinearRegression(learning_rate=0.01, k=20, regularization='l2', lambda_= lambda_, error_threshold=error_threshold)
 
 # Fit the model
 model.fit(x_train, y_train)
@@ -142,12 +146,12 @@ plt.ylabel('Y')
 plt.title('Regression line for L2 Regularization')
 plt.savefig('./figures/l2_regularization_k20.png')
 
-print("Train Metrics")
-print("k=20, L2 Regularization")
-print(f'MSE: {model.mse_list[-1]}')
-print(f'STD: {model.std_list[-1]}')
-print(f'Variance: {model.variance_list[-1]}')
-print()
+# print("Train Metrics")
+# print("k=20, L2 Regularization")
+# print(f'MSE: {model.mse_list[-1]}')
+# print(f'STD: {model.std_list[-1]}')
+# print(f'Variance: {model.variance_list[-1]}')
+# print()
 
 y_pred = model.predict(x_test)
 scores = Scores(y_test, y_pred)

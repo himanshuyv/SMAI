@@ -7,13 +7,21 @@
 The suitable plots for given spotify dataset are following.
 1. Histogram of the numerical features
 ![Histogram](./figures/knn_histogram.png)
+From histogram I can see that the key and mode are not contributing much to the prediction. Hence I can remove them from the features. The other features are contributing to the prediction. The numerical features are not normally distributed. The numerical features are skewed. The numerical features are not on the same scale. Hence I can normalize the features to get better accuracy.
 2. Boxplot of the numerical features
 ![Boxplot](./figures/knn_boxplot.png)
+The similar inference can be drawn from the boxplot as well. 
+Here we can see that the box of mode is very large for only two descrete values. Hence it is only giving the binary information for a 144 distinct genres. Similarily only few distinc values of keys are present. 
+From the box plot we can comment on outliers. The outliers are present in the almost every feature.
 3. Violin plot of the numerical features
 ![Violin](./figures/knn_violinplot.png)
+The violin plot is also showing the distribution of the features. The features are not normally distributed. The features are skewed. The features are not on the same scale. Hence I can normalize the features to get better accuracy. (The same inference can be drawn from the histogram and boxplot as well)
 4. Pairplot of the numerical features
 ![Pairplot](./figures/knn_pairplot.png)
+In pair plot I have plotted the features which are actually contributing to the prediction(inference from histogram). The pair plot is showing the correlation between the features. The features are not linearly correlated. The features are not normally distributed. The features are skewed. The features are not on the same scale. Hence I can normalize the features to get better accuracy.
 
+
+Similar to key and mode, the time_signature is also not contributing much to the prediction. Hence I can remove it from the features. For current implementation I have only removed key and mode.
 
 ### Task 2: KNN Implementation
 
@@ -127,7 +135,7 @@ In this class I have implemented the score calculation for the classsification p
 
 To get TP, FP and FN, I used the basic definitions of how these are calculated with the confusion matrix. 
 
-This model is stored in at path `performance_measures/knn_score.py`.
+This class is stored in at path `performance_measures/knn_score.py`.
 
 
 ### Task 3: Hyperparameter Tuning
@@ -170,18 +178,6 @@ Macro Recall: 0.2516766863258148
 Micro F1 Score: 0.27220055710306407
 Macro F1 Score: 0.24822893866761822
 
-```
-```
-Accuracy for validation data of Second Data set for best k: 10 and distance metric: manhattan is 23.857181498512308%
-
-Scores
-Accuracy: 0.23857181498512306
-Micro Precision: 0.23857181498512306
-Macro Precision: 0.23309489912840395
-Micro Recall: 0.23857181498512306
-Macro Recall: 0.2368804668354507
-Micro F1 Score: 0.23857181498512306
-Macro F1 Score: 0.22697882316775742
 ```
 
 #### Part 3
@@ -235,7 +231,20 @@ My optimized model is faster than the sklearn model for smaller train sizes but 
 For the second dataset that given that was already suffled and splitted in (80:10:10) ratio for training, validating and testing. 
 I used the best hyperparameters from the first dataset to train the model on the second dataset. The best hyperparameters were k = 10 and distance_metric = 'manhattan'.
 
-But the accuracy that I got for the second dataset was lesser than the first dataset. The accuracy that I got for the second dataset was around 25%. This is because as this dataset was already splitted hence dropping duplicates doesn't removed much duplicated from the data and hence there are multiple genres for same song. This is the reason that the accuracy is lesser for the second dataset.
+```
+Accuracy for validation data of Second Data set for best k: 10 and distance metric: manhattan is 23.857181498512308%
+
+Scores
+Accuracy: 0.23857181498512306
+Micro Precision: 0.23857181498512306
+Macro Precision: 0.23309489912840395
+Micro Recall: 0.23857181498512306
+Macro Recall: 0.2368804668354507
+Micro F1 Score: 0.23857181498512306
+Macro F1 Score: 0.22697882316775742
+```
+
+The accuracy that I got for the second dataset was lesser than the first dataset. The accuracy that I got for the second dataset was around 25%. This is because as this dataset was already splitted hence dropping duplicates doesn't removed much duplicated from the data and hence there are multiple genres for same song. This is the reason that the accuracy is lesser for the second dataset.
 
 Another reason for the lesser accuracy is that I hypertuned the model for some other dataset and used the same hyperparameters for this dataset. The best hyperparameters for this dataset can be different than the first dataset.
 
@@ -370,6 +379,23 @@ There is also a parameter create_gif, if it is True then the model will save the
 
 There is get_line method that is used to get the line for the regression for the given x.
 
+This model is stored in at path `models/linear_regression/linear_regression.py`.
+
+To calculate the mse, variance and standard deviation, I am using a which is as follows.
+```python
+import numpy as np
+
+class Scores:
+    def __init__(self, y_test, y_pred):
+        self.y_test = y_test
+        self.y_pred = y_pred
+        self.mse = np.mean((y_pred - y_test) ** 2)
+        self.std = np.std(y_pred)
+        self.variance = np.var(y_pred)
+```
+
+This model is stored in at path `performance_measures/regression_score.py`.
+
 First I have suffled the dataset and splitted it in (80:10:10) ratio for training, validating and testing.
 
 ### Degree 1
@@ -415,6 +441,9 @@ Minimum MSE: 0.009313003
 For tuning the learning rate I am using 4 values of learning rate (0.1, 0.01, 0.001, 0.0001) and the best k that I got from the previous step.
 
 As the learning rate decreases the model takes more epochs to converge. The best learning rate that I got is 0.01. Which is optimal for mse as well as the number of epochs to converge.
+
+The graph for learning rate vs MSE, Epoch to converge is following.
+![Learning Rate](./figures/learning_rate_vs_mse_epoch.png)
 
 ```
 Best learning rate: 0.01
@@ -524,3 +553,11 @@ MSE: 0.023498125044350466
 STD: 0.32754325549029223
 Variance: 0.10728458421717883
 ```
+
+
+From the given dataset, I am not seeing the ovefitting for any value fo k. Hence the regularization is not helping much in this case. The mse is almost same for all the regularization types.
+
+# References
+### For plotting, labelling, other syntactical references I have taken help from the internet resources ans Copilot.
+
+### The code to create the gif was also taken from the internet resources. 
