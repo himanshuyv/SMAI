@@ -199,7 +199,7 @@ K vs Accuracy for different distance metrics are following.
     Cosine
     ![Cosine](./figures/k_vs_accuracy_cosine.png)
 
-As we can see from the plot that the best accuracy for each of the distance metric is at k = 10. The accuracy is highest for manhattan distance metric.
+As we can see from the plot that the best accuracy for each of the distance metric is at k = 20 to k = 40. The accuracy is highest for manhattan distance metric.
 
 Since from the histogram I have seen that the key and mode are not contributing much to the prediction, I have removed them from the features from starting.
 
@@ -226,12 +226,18 @@ As we can clearly see from the plot that the cosine distance metric is the faste
 The plot for inference time vs training size for my best model, my optimized model and the sklearn model is following.
 ![Training Size](./figures/knn_inference_time_vs_train_size.png)
 
+Here we can see that the inference time for all the three models is similar for smaller train sizes. But as the train size increases the inference time for my model increases more than the sklearn model. 
+My optimized model is faster than my best model for all the train sizes.
+My optimized model is faster than the sklearn model for smaller train sizes but as the train size increases the sklearn model is faster than my optimized model.
+
 
 ### Second Dataset
 For the second dataset that given that was already suffled and splitted in (80:10:10) ratio for training, validating and testing. 
 I used the best hyperparameters from the first dataset to train the model on the second dataset. The best hyperparameters were k = 10 and distance_metric = 'manhattan'.
 
 But the accuracy that I got for the second dataset was lesser than the first dataset. The accuracy that I got for the second dataset was around 25%. This is because as this dataset was already splitted hence dropping duplicates doesn't removed much duplicated from the data and hence there are multiple genres for same song. This is the reason that the accuracy is lesser for the second dataset.
+
+Another reason for the lesser accuracy is that I hypertuned the model for some other dataset and used the same hyperparameters for this dataset. The best hyperparameters for this dataset can be different than the first dataset.
 
 ## Linear Regression
 
@@ -395,11 +401,10 @@ Regession line for degree k = 20 is following.
 For tuning I am using the validation set. 
 Following is the graph of k vs MSE.
 ![Degree k](./figures/k_vs_mse_regression.png)
+Here we can see that the mse for k = 10 to 20 is almost same.
 
 K vs MSE, Variance and Standard for both Train and Test Split.
 ![Degree k](./figures/k_vs_mse_std_variance_forTrainTestSplit.png)
-
-Here we can see that the mse for k = 10 to 20 is almost same.
 
 K that minimizes the MSE is 10 in my case but this also depends on the suffling of the data. 
 ```

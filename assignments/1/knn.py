@@ -89,8 +89,8 @@ knn = KNN(k)
 knn.fit(x_train, y_train)
 
 # taking only 1000 samples for faster runtime 
-# x_validate = x_validate.iloc[:1000]
-# y_validate = y_validate.iloc[:1000]
+x_validate = x_validate.iloc[:1000]
+y_validate = y_validate.iloc[:1000]
 
 y_pred = knn.predict(x_validate, distance_metric='cosine')
 print(np.mean(y_pred == y_validate))
@@ -260,47 +260,47 @@ plt.ylabel('Inference Time')
 plt.title('Inference Time for KNN')
 plt.savefig('./figures/knn_inference_time.png')
 
-# # Inference time plot with different train data sizes for my model and sklearn model
+# Inference time plot with different train data sizes for my model and sklearn model
 
-# train_sizes = [10, 100, 1000, 3000, 5000, 8000, 10000, 15000]
+train_sizes = [1000, 5000, 10000, 50000, 100000]
 
-# inference_times_my_model = []
-# inference_times_my_optimized_model = []
-# inference_times_sklearn = []
+inference_times_my_model = []
+inference_times_my_optimized_model = []
+inference_times_sklearn = []
 
-# for train_size in train_sizes:
-#     temp_x_train = x_train.iloc[:train_size]
-#     temp_y_train = y_train.iloc[:train_size]
-#     knn = KNN(best_k)
-#     knn.fit(temp_x_train, temp_y_train)
-#     start_myknn = time.time()
-#     y_pred = knn.predict(x_test, distance_metric=best_distance_metric)
-#     accuracy = np.mean(y_pred == y_test)
-#     end_myknn = time.time()
-#     inference_times_my_model.append(end_myknn - start_myknn)
+for train_size in train_sizes:
+    temp_x_train = x_train.iloc[:train_size]
+    temp_y_train = y_train.iloc[:train_size]
+    knn = KNN(best_k)
+    knn.fit(temp_x_train, temp_y_train)
+    start_myknn = time.time()
+    y_pred = knn.predict(x_test, distance_metric=best_distance_metric)
+    accuracy = np.mean(y_pred == y_test)
+    end_myknn = time.time()
+    inference_times_my_model.append(end_myknn - start_myknn)
 
-#     knn_sklearn = KNeighborsClassifier(n_neighbors=best_k)
-#     knn_sklearn.fit(temp_x_train, temp_y_train)
-#     start_sklearn = time.time()
-#     y_pred_sklearn = knn_sklearn.predict(x_test)
-#     accuracy = np.mean(y_pred_sklearn == y_test)
-#     end_sklearn = time.time()
-#     inference_times_sklearn.append(end_sklearn - start_sklearn)
+    knn_sklearn = KNeighborsClassifier(n_neighbors=best_k)
+    knn_sklearn.fit(temp_x_train, temp_y_train)
+    start_sklearn = time.time()
+    y_pred_sklearn = knn_sklearn.predict(x_test)
+    accuracy = np.mean(y_pred_sklearn == y_test)
+    end_sklearn = time.time()
+    inference_times_sklearn.append(end_sklearn - start_sklearn)
 
-#     start_myknn = time.time() 
-#     y_pred = knn.predict(x_test, distance_metric='cosine')
-#     accuracy = np.mean(y_pred == y_test)
-#     end_myknn = time.time()
+    start_myknn = time.time() 
+    y_pred = knn.predict(x_test, distance_metric='cosine')
+    accuracy = np.mean(y_pred == y_test)
+    end_myknn = time.time()
 
-#     inference_times_my_optimized_model.append(end_myknn - start_myknn)
+    inference_times_my_optimized_model.append(end_myknn - start_myknn)
 
 
-# fig = plt.figure()
-# plt.plot(train_sizes, inference_times_my_model)
-# plt.plot(train_sizes, inference_times_my_optimized_model)
-# plt.plot(train_sizes, inference_times_sklearn)
-# plt.xlabel('Train Size')
-# plt.ylabel('Inference Time')
-# plt.title('Inference Time vs Train Size')
-# plt.legend(['My Model', 'My Optimized Model', 'Sklearn'])
-# plt.savefig('./figures/knn_inference_time_vs_train_size.png')
+fig = plt.figure()
+plt.plot(train_sizes, inference_times_my_model)
+plt.plot(train_sizes, inference_times_my_optimized_model)
+plt.plot(train_sizes, inference_times_sklearn)
+plt.xlabel('Train Size')
+plt.ylabel('Inference Time')
+plt.title('Inference Time vs Train Size')
+plt.legend(['My Model', 'My Optimized Model', 'Sklearn'])
+plt.savefig('./figures/knn_inference_time_vs_train_size.png')

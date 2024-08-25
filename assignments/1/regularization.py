@@ -14,7 +14,7 @@ from performance_measures.regression_score import Scores
 df = pd.read_csv("./../../data/external/regularisation.csv")
 
 # initialize model
-model = LinearRegression(learning_rate=0.01, k=5, error_threshold=1e-6)
+model = LinearRegression(learning_rate=0.01, k=5, error_threshold=1e-4)
 
 # Suffle and split the data
 df = df.sample(frac=1).reset_index(drop=True)
@@ -98,7 +98,7 @@ print()
 # Task 2: Regularization
 
 # initialize model
-model = LinearRegression(learning_rate=0.01, k=20, regularization='l1', lambda_=0.01, error_threshold=1e-6)
+model = LinearRegression(learning_rate=0.01, k=20, regularization='l1', lambda_=0.0001, error_threshold=1e-4)
 
 # Fit the model
 model.fit(x_train, y_train)
@@ -129,7 +129,7 @@ print(f'Variance: {scores.variance}')
 print()
 
 # initialize model
-model = LinearRegression(learning_rate=0.01, k=20, regularization='l2', lambda_=0.01, error_threshold=1e-6)
+model = LinearRegression(learning_rate=0.01, k=20, regularization='l2', lambda_=0.0001, error_threshold=1e-4)
 
 # Fit the model
 model.fit(x_train, y_train)
