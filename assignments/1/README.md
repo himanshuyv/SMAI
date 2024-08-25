@@ -283,9 +283,9 @@ class LinearRegression:
             self.x_train = np.hstack((self.x_train, temp))
 
         self.n_samples = x_train.shape[0]
-        self.n_features = self.k
+        self.n_features = self.k + 1
         self.weights = np.zeros(self.n_features)
-        self.bias = 0
+
         for i in range(self.n_Epochs):
             self.update_weights()
 
@@ -306,19 +306,17 @@ class LinearRegression:
         self.variance_list.append(variance)
         self.std_list.append(std)
 
-        dW = (1 / self.n_samples) * np.dot(self.x_train.T, (y_pred - self.y_train))
-        db = (1 / self.n_samples) * np.sum(y_pred - self.y_train)
+        x_train_with_bias = np.hstack((np.ones((self.n_samples, 1)), self.x_train))
+        dW = (2 / self.n_samples) * np.dot(x_train_with_bias.T, (y_pred - self.y_train))
 
         if self.regularization == 'l1':
             reg_term = self.lambda_ * np.sign(self.weights)
             self.weights -= self.learning_rate * (dW + reg_term)
         elif self.regularization == 'l2':
-            reg_term = self.lambda_ * self.weights
+            reg_term = 2 * self.lambda_ * self.weights
             self.weights -= self.learning_rate * (dW + reg_term)
         else:
             self.weights -= self.learning_rate * dW
-
-        self.bias -= self.learning_rate * db
 
     def predict(self, x):
         if x.ndim == 1:
@@ -328,15 +326,16 @@ class LinearRegression:
                 temp = x ** i
                 xc = np.hstack((xc, temp))
             x = xc
-        return np.dot(x, self.weights) + self.bias
+
+        x_with_bias = np.hstack((np.ones((x.shape[0], 1)), x))
+        return np.dot(x_with_bias, self.weights)
 
     def get_line(self, x):
         w = self.weights
-        b = self.bias
         n = len(w)
-        y = b
+        y = 0
         for i in range(n):
-            y += w[i] * x ** (i + 1)
+            y += w[i] * x ** (i)
         return y
 
     def save_image(self, name):
