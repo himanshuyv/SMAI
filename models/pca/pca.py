@@ -32,3 +32,8 @@ class PCA:
             return False
 
         return True
+    
+    def getExplainedVariance(self):
+        sum1 = np.cumsum(self.eig_values[:self.n_components])
+        sum2 = np.sum(self.eig_values)
+        return sum1 / sum2
