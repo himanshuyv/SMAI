@@ -5,13 +5,21 @@ class KNN:
         self.k = k
 
     def fit(self, x_train, y_train):
-        self.x_train = x_train.to_numpy()
-        self.y_train = y_train.to_numpy()
+        if (type(x_train) == np.ndarray):
+            self.x_train = x_train
+        else:
+            self.x_train = x_train.to_numpy()
+        if (type(y_train) == np.ndarray):
+            self.y_train = y_train
+        else:
+            self.y_train = y_train.to_numpy()
         self.norm_x_train = np.linalg.norm(self.x_train, axis=1)
         
     def predict(self, x_test, distance_metric='euclidean'):
         y_pred = []
-        x_test = x_test.to_numpy()
+        if (type(x_test) != np.ndarray):
+            x_test = x_test.to_numpy()
+                    
         for x in x_test:
             y_pred.append(self.predict_one(x, distance_metric))
         return np.array(y_pred)
