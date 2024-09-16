@@ -5,7 +5,7 @@ import matplotlib.pyplot as plt
 import sys
 sys.path.append('./../../models/kmeans')
 
-from kmeans import KMeans
+from models.kmeans.kmeans import KMeans
 
 # load data
 df = pd.read_feather('./../../data/external/word-embeddings.feather')

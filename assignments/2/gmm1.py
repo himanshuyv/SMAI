@@ -9,11 +9,11 @@ from models.gmm.gmm import Gmm
 
 gmm = Gmm(k = 3, n_iter = 10)
 
-# data = pd.read_csv("./../../data/external/clustering.csv")
-# print(data.head())
+data = pd.read_csv("./../../data/external/clustering.csv")
+print(data.head())
 
-# X = data[['x','y']].to_numpy()
-# Y = data['color'].to_numpy()
+X = data[['x','y']].to_numpy()
+Y = data['color'].to_numpy()
 
 df = pd.read_feather('./../../data/external/word-embeddings.feather')
 
@@ -40,15 +40,16 @@ plt.show()
 AIC = []
 BIC = []
 
-for i in range(3, 11):
+for i in range(1, 11):
     gmm = Gmm(k = i, n_iter = 10)
     gmm.fit(X)
     AIC.append(gmm.aic())
     BIC.append(gmm.bic())
+    print("likelihood: ", gmm.getLikelihood())
 
 
-plt.plot(range(3, 11), AIC, marker = 'o', label = 'AIC')
-plt.plot(range(3, 11), BIC, marker = 'o', label = 'BIC')
+plt.plot(range(1, 11), AIC, marker = 'o', label = 'AIC')
+plt.plot(range(1, 11), BIC, marker = 'o', label = 'BIC')
 plt.xlabel('Number of clusters')
 plt.ylabel('Information Criterion')
 plt.legend()
@@ -66,16 +67,16 @@ print("Inbuilt GMM Likelihood: ", gmm.score(X))
 AIC_inbuilt = []
 BIC_inbuilt = []
 
-for i in range(3, 11):
-    gmm = GaussianMixture(n_components = i, max_iter = 10)
+for i in range(1, 11):
+    gmm = GaussianMixture(n_components = i, max_iter = 100)
     gmm.fit(X)
     likelihood = gmm.score(X)
-    AIC_inbuilt.append(2 * i - 2 * likelihood)
-    BIC_inbuilt.append(i * np.log(X.shape[0]) - 2 * likelihood)
+    AIC_inbuilt.append(gmm.aic(X))
+    BIC_inbuilt.append(gmm.bic(X))
 
 
-plt.plot(range(3, 11), AIC_inbuilt, marker = 'o', label = 'AIC')
-plt.plot(range(3, 11), BIC_inbuilt, marker = 'o', label = 'BIC')
+plt.plot(range(1, 11), AIC_inbuilt, marker = 'o', label = 'AIC')
+plt.plot(range(1, 11), BIC_inbuilt, marker = 'o', label = 'BIC')
 plt.xlabel('Number of clusters')
 plt.ylabel('Information Criterion')
 plt.legend()
