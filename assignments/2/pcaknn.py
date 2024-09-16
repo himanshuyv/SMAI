@@ -6,19 +6,15 @@ import sys
 sys.path.append('./../../')
 from models.knn.knn import KNN
 from models.pca.pca import PCA
+from performance_measures.knn_score import Scores
 
-# Task 1
-
-# Load data
 df = pd.read_csv("./../../data/external/spotify.csv")
 df = df.drop(columns=['Unnamed: 0'])
 df = df.drop_duplicates(subset='track_id', keep="first")
 
-# suffle the data
 df = df.sample(frac=1).reset_index(drop=True)
 df_numerical = df.select_dtypes(include=['number'])
 
-# normalizing data
 def normalize(df):
     return (df - df.min()) / (df.max() - df.min())
 df_numerical = normalize(df_numerical)
@@ -34,34 +30,45 @@ pca = PCA(n_components = n)
 pca.fit(X)
 
 explained_var = pca.getExplainedVariance()
+plt.figure()
 plt.plot(range(1, len(explained_var) + 1), explained_var, marker = 'o')
 plt.xlabel('Number of components')
 plt.ylabel('Explained variance')
-plt.show()
+plt.title('Explained Variance')
+plt.savefig("./figures/pca_knn_explained_variance.png")
 
+plt.figure()
 plt.plot(range(1, len(pca.eig_values)+1), pca.eig_values, marker = 'o')
 plt.xlabel('Number of components')
 plt.ylabel('Eigenvalues fraction')
-plt.show()
+plt.title('Eigenvalues Fraction')
+plt.savefig("./figures/pca_knn_eigenvalues_fraction.png")
 
 pca = PCA(n_components = 10)
 pca.fit(X)
 X1 = pca.transform(X)
 
 train_size = int(0.8 * len(df))
-validate_size = int(0.1 * len(df))
-test_size = len(df) - train_size - validate_size
 
-x_train, x_validate, x_test = np.split(X1, [train_size, train_size + validate_size])
-y_train, y_validate, y_test = np.split(Y, [train_size, train_size + validate_size])
+x_train = X1[:train_size]
+y_train = Y[:train_size]
+x_validate = X1[train_size:]
+y_validate = Y[train_size:]
 
-x_train = normalize(x_train)
-x_test = normalize(x_test)
-x_validate = normalize(x_validate)
-
-k = 21
+k = 20
 knn = KNN(k)
 knn.fit(x_train, y_train)
 
 y_pred = knn.predict(x_validate, distance_metric='manhattan')
-print(np.mean(y_pred == y_validate))
+
+score = Scores(y_validate, y_pred)
+accuracy = score.accuracy
+print(f'Accuracy: {accuracy}')
+print(f'Micro Precision: {score.micro_precision}')
+print(f'Micro Recall: {score.micro_recall}')
+print(f'Micro F1: {score.micro_f1}')
+print(f'Macro Precision: {score.macro_precision}')
+print(f'Macro Recall: {score.macro_recall}')
+print(f'Macro F1: {score.macro_f1}')
+
+
