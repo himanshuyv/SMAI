@@ -394,7 +394,7 @@ def hierarchical_fun(X, Y, kbest1, kbest2):
             plt.tight_layout()
             plt.savefig(f"./figures/dendrogram_{method}_{distance}.png")
 
-    best_method = 'complete'
+    best_method = 'ward'
     best_distance = 'euclidean'
 
     Z_best = dendrograms[f"{best_method}_{best_distance}"]

@@ -42,17 +42,17 @@ class KMeans:
         return cost
 ```
 
-- Clustering Plot for the smaller dataset
-    ![Clustering Plot](./figures/kmeans_small.png)
+- Clustering Plot for the smaller dataset<br>
+![Clustering Plot](./figures/kmeans_small.png)
 
 ### Task 2: Elbow Method
 
-- Elbow method for the smaller dataset
+- Elbow method for the smaller dataset<br>
 ![Elbow Method](./figures/kmeans_elbow_method_small.png)
 
 Here from plot we can see that the elbow point is at k = 3.
 
-- Elbow method for the larger dataset
+- Elbow method for the larger dataset<br>
 ![Elbow Method](./figures/kmeans_elbow_method_big.png)
 
 It depends on the different runs, as in the class I am initializing the centroids randomly. For this plot the elbow point is at k = 11.
@@ -156,6 +156,10 @@ So the Current version of the E-step and the M-step is taken from the LLM.
 
 ### Task 2: Testing, AIC and BIC
 
+The class works but not perfectly for the given dataset as there is problem of overflow and singular matrices.
+
+The sklearn class also works. The results are similar to my class. Because the problem of overflow and singular matrices is handled in the inbuilt class.
+
 ```
 Likelihood:  522241.37061497767
 pi:  [0.245 0.375 0.38 ]
@@ -163,13 +167,13 @@ Inbuilt GMM Likelihood:  575859.1572580193
 ```
 As we can see from the above results, the likelihood of my gmm is less than the inbuilt gmm (Although they are close). This is because we initialize the mu and sigma randomly and the likelihood depends on the initialization of the mu and sigma. The above results are for the best k that is 3.
 
-- Plot for the smaller dataset.
+- Plot for the smaller dataset.<br>
 ![GMM Plot](./figures/gmm_clusters.png)
 
-- AIC and BIC for the larger dataset
+- AIC and BIC for the larger dataset<br>
 ![AIC and BIC](./figures/gmm_aic_bic_mine.png)
 
-- AIC and BIC for the larger dataset using inbuilt function
+- AIC and BIC for the larger dataset using inbuilt function<br>
 ![AIC and BIC](./figures/gmm_aic_bic_inbuilt.png)
 
 From the above plots, Elbow point is not very clear for this dataset. But most closer to the elbow point is at k = 2 of k = 3.
@@ -242,10 +246,10 @@ After PCA
 (200, 3)
 ``` 
 
-- Plot for 2D
+- Plot for 2D<br>
 ![PCA Plot](./figures/pca_2d.png)
 
-- Plot for 3D
+- Plot for 3D<br>
 ![PCA Plot](./figures/pca_3d.png)
 
 ### Data Analysis
@@ -257,7 +261,7 @@ After PCA
 
 ## PCA + Clustering
 ### K-means Clustering Based on 2D Visualization
-![PCA Plot](./figures/pca_kmeans.png)
+![PCA Plot](./figures/pca_kmeans.png)<br>
 
 - K-means clustering on the 2D PCA transformed data with k = k2.
 - The cost(WCSS) for k = k2 for dataset is following.
@@ -266,15 +270,15 @@ Cost of Kmeans for k2: 4055.3350336015887
 ```
 
 ### PCA + K-Means Clustering
-- Scree Plot
+- Scree Plot <br>
 ![PCA Plot](./figures/pca_explained_variance.png)
 
-- Eigen Values Plot
+- Eigen Values Plot <br>
 ![PCA Plot](./figures/pca_eigenvalues_fraction.png)
 
 To capture 95% of the variance, we need 132 dimensions.
 
-- Elbow Method
+- Elbow Method <br>
 ![Elbow Method](./figures/pca_kmeans_elbow.png)
 
 From the above plot, the elbow point is at k = 8.
@@ -295,7 +299,7 @@ Likelihood for original Dataset with k = k2:  542268.2594889485
 
 ###  PCA + GMMs
 
-- AIC and BIC for the reduced dataset
+- AIC and BIC for the reduced dataset <br>
 ![AIC and BIC](./figures/pca_gmm_aic_bic.png)
 
 From the above plots, the elbow point is at k = 4. It vary for different runs but most of the time it is at k = 4 of k = 5.
@@ -425,59 +429,65 @@ As Explained above with my analysis for this given dataset the k-means is giving
 
 Plots For different linkage methods and different distance metrics
 
-- Single Linkage with Euclidean Distance
+- Single Linkage with Euclidean Distance <br>
 ![Single Linkage](./figures/dendrogram_single_euclidean.png)
 
-- Single Linkage with Cosine Distance
+- Single Linkage with Cosine Distance <br>
 ![Single Linkage](./figures/dendrogram_single_cosine.png)
 
-- Complete Linkage with Euclidean Distance
+- Complete Linkage with Euclidean Distance <br>
 ![Complete Linkage](./figures/dendrogram_complete_euclidean.png)
 
-- Complete Linkage with Cosine Distance
+- Complete Linkage with Cosine Distance <br>
 ![Complete Linkage](./figures/dendrogram_complete_cosine.png)
 
-- Average Linkage with Euclidean Distance
+- Average Linkage with Euclidean Distance <br>
 ![Average Linkage](./figures/dendrogram_average_euclidean.png)
 
-- Average Linkage with Cosine Distance
+- Average Linkage with Cosine Distance <br>
 ![Average Linkage](./figures/dendrogram_average_cosine.png)
 
-- Ward Linkage with Euclidean Distance
+- Ward Linkage with Euclidean Distance <br>
 ![Ward Linkage](./figures/dendrogram_ward_euclidean.png)
 
-- Centroid Linkage with Euclidean Distance
+- Centroid Linkage with Euclidean Distance <br>
 ![Centroid Linkage](./figures/dendrogram_centroid_euclidean.png)
+
+
+The best linkage method and distance metric is Ward Linkage with Euclidean Distance. The clusters in this case are clearly visible and meaningful.
 
 ```
 Clusters for K-Means best k (k=8):
-Cluster 1: ['sit', 'eat', 'dig', 'run', 'clap', 'sad', 'buy']
+Cluster 1: ['listen', 'flame', 'download', 'hard', 'fight', 'hit', 'cry', 'sad', 'pray', 'buy', 'burn', 'fire', 'close', 'scary', 'cut']
 
-Cluster 2: ['drive', 'sing', 'listen', 'dive', 'flame', 'knock', 'exit', 'brick', 'smile', 'bullet', 'bury', 'download', 'postcard', 'hard', 'bend', 'fight', 'puppet', 'call', 'face', 'scream', 'kiss', 'passport', 'selfie', 'catch', 'hit', 'paint', 'far', 'cry', 'pull', 'sleep', 'cigarette', 'hollow', 'clean', 'empty', 'slide', 'drink', 'door', 'draw', 'pray', 'arrest', 'finger', 'burn', 'fire', 'close', 'angry', 'lazy', 'scary', 'hang', 'book', 'tattoo', 'earth', 'fingerprints', 'dustbin', 'tank', 'enter', 'key', 'swim', 'zip', 'loudspeaker', 'happy', 'telephone', 'loud', 'love', 'cook', 'arrow', 'recycle', 'cut', 'truck']
+Cluster 2: ['sing', 'dive', 'knock', 'exit', 'brick', 'smile', 'bury', 'bend', 'face', 'scream', 'kiss', 'selfie', 'catch', 'paint', 'far', 'sleep', 'hollow', 'clean', 'empty', 'slide', 'drink', 'door', 'draw', 'arrest', 'angry', 'lazy', 'hang', 'tattoo', 'earth', 'enter', 'key', 'swim', 'happy', 'loud', 'love', 'cook']
 
-Cluster 3: ['rose', 'helicopter', 'table', 'fishing', 'bear', 'spider', 'shark', 'grass', 'forest', 'lizard', 'mug', 'lake', 'kneel', 'plant', 'microwave', 'notebook', 'baseball', 'bench', 'bucket', 'puppy', 'feet', 'boat', 'pear', 'basket', 'fish', 'fruit', 'grape', 'laptop', 'calendar', 'chair', 'mouse', 'email', 'oven', 'calculator', 'spiderman', 'tree', 'envelope', 'skate', 'snake', 'airplane', 'ambulance', 'pizza', 'throne', 'stove', 'basketball', 'bicycle', 'toaster', 'shoe', 'walk', 'keyboard', 'suitcase']
+Cluster 3: ['deer', 'spider', 'shark', 'giraffe', 'lizard', 'feather', 'frog', 'fly', 'starfish', 'peacock', 'fish', 'ant', 'goldfish', 'bird', 'spiderman', 'bee', 'beetle', 'snake', 'dragonfly', 'butterfly', 'crocodile']
 
-Cluster 4: ['needle', 'eraser', 'brush', 'feather', 'spoon', 'fly', 'climb', 'roof', 'stairs', 'rifle', 'pencil', 'bed', 'jacket', 'flute', 'scissor', 'ladder', 'bird', 'clock', 'pillow', 'hammer', 'toothbrush', 'screwdriver', 'teaspoon', 'length', 'rain', 'tent', 'parachute', 'sword', 'rainy', 'knife', 'toothpaste', 'wheel', 'windmill', 'comb', 'fork', 'paintbrush']
+Cluster 4: ['panda', 'ape', 'sit', 'cat', 'eraser', 'carrot', 'bear', 'grass', 'forest', 'eat', 'puppet', 'gym', 'kneel', 'monkey', 'cow', 'pencil', 'plant', 'dig', 'run', 'clap', 'pull', 'sun', 'puppy', 'feet', 'pear', 'fruit', 'grape', 'finger', 'tree', 'fingerprints', 'rain', 'zip', 'tomato', 'elephant', 'pant', 'rainy', 'potato', 'shoe', 'sunny']
 
-Cluster 5: ['gym', 'van', 'microphone', 'sun', 'candle', 'television', 'camera', 'tomato', 'car', 'lantern', 'pant', 'potato', 'sunny', 'radio']
+Cluster 5: ['brush', 'spoon', 'scissor', 'hammer', 'toothbrush', 'screwdriver', 'teaspoon', 'length', 'sword', 'knife', 'toothpaste', 'comb', 'fork', 'paintbrush']   
 
-Cluster 6: ['deer', 'panda', 'ape', 'cat', 'carrot', 'giraffe', 'frog', 'monkey', 'cow', 'starfish', 'saturn', 'ant', 'goldfish', 'bee', 'beetle', 'dragonfly', 'butterfly', 'elephant', 'crocodile']
+Cluster 6: ['postcard', 'call', 'passport', 'microwave', 'notebook', 'microphone', 'laptop', 'calendar', 'email', 'oven', 'calculator', 'envelope', 'book', 'dustbin', 'television', 'camera', 'loudspeaker', 'telephone', 'stove', 'recycle', 'toaster', 'keyboard', 'radio', 'suitcase']
 
-Cluster 7: ['knit', 'sweater', 'peacock', 'igloo']
+Cluster 7: ['table', 'mug', 'climb', 'roof', 'stairs', 'bed', 'knit', 'sweater', 'jacket', 'bench', 'bucket', 'chair', 'ladder', 'candle', 'igloo', 'clock', 'pillow', 'throne', 'tent', 'parachute', 'lantern', 'wheel', 'windmill']
 
-Cluster 8: ['badminton']
+Cluster 8: ['drive', 'rose', 'helicopter', 'needle', 'fishing', 'bullet', 'lake', 'rifle', 'van', 'cigarette', 'baseball', 'boat', 'basket', 'saturn', 'flute', 'badminton', 'mouse', 'skate', 'tank', 'airplane', 'ambulance', 'pizza', 'car', 'basketball', 'bicycle', 'arrow', 'walk', 'truck']
+
 ```
 There is very less similarity between the clusters of K-Means and Hierarchical Clustering. Hence these clusters do not align with the clusters of K-Means.
 
 ```
+GMM best k clusters
+
 Clusters for GMM best k (k=4):
-Cluster 1: ['sit', 'eat', 'dig', 'run', 'clap', 'sad', 'buy']
+Cluster 1: ['sing', 'listen', 'dive', 'flame', 'knock', 'exit', 'brick', 'smile', 'bury', 'download', 'hard', 'bend', 'fight', 'face', 'scream', 'kiss', 'selfie', 'catch', 'hit', 'paint', 'far', 'cry', 'sleep', 'hollow', 'clean', 'sad', 'empty', 'slide', 'drink', 'door', 'draw', 'pray', 'arrest', 'buy', 'burn', 'fire', 'close', 'angry', 'lazy', 'scary', 'hang', 'tattoo', 'earth', 'enter', 'key', 'swim', 'happy', 'loud', 'love', 'cook', 'cut']
 
-Cluster 2: ['drive', 'sing', 'listen', 'dive', 'flame', 'knock', 'exit', 'brick', 'smile', 'bullet', 'bury', 'download', 'postcard', 'hard', 'bend', 'fight', 'puppet', 'call', 'face', 'scream', 'kiss', 'passport', 'selfie', 'catch', 'hit', 'paint', 'far', 'cry', 'pull', 'sleep', 'cigarette', 'hollow', 'clean', 'empty', 'slide', 'drink', 'door', 'draw', 'pray', 'arrest', 'finger', 'burn', 'fire', 'close', 'angry', 'lazy', 'scary', 'hang', 'book', 'tattoo', 'earth', 'fingerprints', 'dustbin', 'tank', 'enter', 'key', 'swim', 'zip', 'loudspeaker', 'happy', 'telephone', 'loud', 'love', 'cook', 'arrow', 'recycle', 'cut', 'truck']
+Cluster 2: ['deer', 'panda', 'ape', 'sit', 'cat', 'eraser', 'carrot', 'bear', 'spider', 'shark', 'grass', 'giraffe', 'forest', 'lizard', 'feather', 'eat', 'frog', 'puppet', 'fly', 'gym', 'kneel', 'monkey', 'cow', 'pencil', 'starfish', 'plant', 'dig', 'run', 'clap', 'pull', 'sun', 'puppy', 'feet', 'pear', 'peacock', 'fish', 'fruit', 'grape', 'finger', 'ant', 'goldfish', 'bird', 'spiderman', 'bee', 'tree', 'beetle', 'snake', 'fingerprints', 'rain', 'zip', 'tomato', 'dragonfly', 'butterfly', 'elephant', 'pant', 'rainy', 'potato', 'crocodile', 'shoe', 'sunny']
 
-Cluster 3: ['deer', 'panda', 'ape', 'rose', 'helicopter', 'cat', 'needle', 'eraser', 'table', 'carrot', 'fishing', 'bear', 'spider', 'shark', 'grass', 'giraffe', 'forest', 'lizard', 'brush', 'mug', 'feather', 'spoon', 'frog', 'fly', 'gym', 'lake', 'climb', 'kneel', 'monkey', 'roof', 'stairs', 'rifle', 'cow', 'pencil', 'bed', 'starfish', 'plant', 'microwave', 'notebook', 'van', 'microphone', 'baseball', 'jacket', 'bench', 'sun', 'bucket', 'puppy', 'feet', 'boat', 'pear', 'basket', 'fish', 'saturn', 'flute', 'fruit', 'scissor', 'grape', 'laptop', 'calendar', 'chair', 'mouse', 'ladder', 'email', 'candle', 'ant', 'goldfish', 'bird', 'clock', 'oven', 'calculator', 'spiderman', 'bee', 'pillow', 'tree', 'beetle', 'envelope', 'skate', 'hammer', 'toothbrush', 'screwdriver', 'snake', 'teaspoon', 'length', 'rain', 'airplane', 'ambulance', 'pizza', 'television', 'throne', 'tent', 'camera', 'tomato', 'dragonfly', 'parachute', 'butterfly', 'car', 'sword', 'lantern', 'elephant', 'pant', 'stove', 'rainy', 'knife', 'toothpaste', 'basketball', 'wheel', 'bicycle', 'windmill', 'toaster', 'potato', 'comb', 'crocodile', 'shoe', 'walk', 'keyboard', 'fork', 'sunny', 'radio', 'suitcase', 'paintbrush']
+Cluster 3: ['brush', 'spoon', 'scissor', 'hammer', 'toothbrush', 'screwdriver', 'teaspoon', 'length', 'sword', 'knife', 'toothpaste', 'comb', 'fork', 'paintbrush']   
 
-Cluster 4: ['knit', 'sweater', 'peacock', 'badminton', 'igloo']
+Cluster 4: ['drive', 'rose', 'helicopter', 'needle', 'table', 'fishing', 'bullet', 'mug', 'postcard', 'call', 'lake', 'climb', 'passport', 'roof', 'stairs', 'rifle', 'bed', 'microwave', 'notebook', 'knit', 'van', 'sweater', 'cigarette', 'microphone', 'baseball', 'jacket', 'bench', 'bucket', 'boat', 'basket', 'saturn', 'flute', 'laptop', 'calendar', 'badminton', 'chair', 'mouse', 'ladder', 'email', 'candle', 'igloo', 'clock', 'oven', 'calculator', 'pillow', 'envelope', 'skate', 'book', 'dustbin', 'tank', 'airplane', 'ambulance', 'pizza', 'television', 'throne', 'tent', 'camera', 'parachute', 'car', 'loudspeaker', 'lantern', 'telephone', 'stove', 'basketball', 'wheel', 'bicycle', 'windmill', 'arrow', 'recycle', 'toaster', 'walk', 'keyboard', 'radio', 'truck', 'suitcase']
 ```
 
 There is very less similarity between the clusters of GMM and Hierarchical Clustering. Hence these clusters do not align with the clusters of GMM.
@@ -490,10 +500,10 @@ In both the cases the Hierarchical clustering is more meaningful as compared to 
 
 Scree plot for the Spotify dataset
 
-- Cumilative Explained Variance
+- Cumilative Explained Variance <br>
 ![PCA Plot](./figures/pca_knn_explained_variance.png)
 
-- Eigen Values Plot
+- Eigen Values Plot <br>
 ![PCA Plot](./figures/pca_knn_eigenvalues_fraction.png)
 
 To capture 95% of the variance, we need 8 features.
@@ -527,7 +537,7 @@ We can see that the accuracy is less for the reduced dataset as compared to the 
 
 Same is the case with the precision, recall and F1 scores.
 
-Reducing the dimensions also reduces the inference time.
+Reducing the dimensions also reduces the inference time.<br>
 
 ![Inference Time](./figures/pca_knn_inference_time.png)
 
