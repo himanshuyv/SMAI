@@ -9,7 +9,6 @@ from models.pca.pca import PCA
 from models.kmeans.kmeans import KMeans
 from models.gmm.gmm import Gmm
 
-pca = PCA(n_components = 2)
 
 df = pd.read_feather('./../../data/external/word-embeddings.feather')
 
@@ -18,6 +17,7 @@ X = np.array([x for x in X])
 Y = df['words'].to_numpy()
 
 
+pca = PCA(n_components = 2)
 pca.fit(X)
 
 X1 = pca.transform(X)

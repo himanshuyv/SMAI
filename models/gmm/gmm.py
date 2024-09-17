@@ -15,8 +15,6 @@ class Gmm:
         self.sigma = np.array([np.eye(self.n_features)] * self.k)
 
         for _ in range(self.n_iter):
-            # print("Iteration: ", _)
-            # print(self.pi)
             self.e_step()
             self.m_step()
             likelihood = self.getLikelihood()

@@ -8,7 +8,6 @@ sys.path.append("./../../")
 from models.pca.pca import PCA
 
 
-pca = PCA(n_components = 2)
 
 df = pd.read_feather('./../../data/external/word-embeddings.feather')
 
@@ -17,6 +16,7 @@ X = np.array([x for x in X])
 Y = df['words'].to_numpy()
 
 
+pca = PCA(n_components = 2)
 pca.fit(X)
 
 print("Before Trnasformation:", pca.checkPCA(X))

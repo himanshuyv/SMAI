@@ -6,9 +6,6 @@ sys.path.append("./../../")
 
 from models.gmm.gmm import Gmm
 
-
-gmm = Gmm(k = 3, n_iter = 10)
-
 data = pd.read_csv("./../../data/external/clustering.csv")
 print(data.head())
 
@@ -21,6 +18,7 @@ X = df['vit'].to_numpy()
 X = np.array([x for x in X])
 Y = df['words'].to_numpy()
 
+gmm = Gmm(k = 3, n_iter = 10)
 gmm.fit(X)
 
 print("Likelihood: ", gmm.getLikelihood())
