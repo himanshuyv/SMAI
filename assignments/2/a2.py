@@ -58,7 +58,7 @@ def kmeans_fun(k_, X, Y, type="small"):
         clusters[labels[i]].append(Y[i])
 
     for i in range(k_):
-        print(f'Cluster {i+1}: {clusters[i]}')
+        print(f'Cluster {i+1}: {clusters[i]}\n')
 
     wcss = []
     for i in range(1, 20):
@@ -81,7 +81,6 @@ def gmm_fun(k_, X, Y, type="small"):
     print("Likelihood: ", gmm.getLikelihood())
     print("pi: ", gmm.get_params()[0])
 
-    # ploting the clusters
     gamma = gmm.getMembership()
     clusters = np.argmax(gamma, axis = 1)
 
@@ -95,6 +94,16 @@ def gmm_fun(k_, X, Y, type="small"):
         plt.title('GMM Clustering')
         plt.savefig("./figures/gmm_clusters.png")
         return
+
+    clusters = {}
+    for i in range(k_):
+        clusters[i] = []
+
+    for i in range(len(Y)):
+        clusters[np.argmax(gamma[i])].append(Y[i])
+
+    for i in range(k_):
+        print(f'Cluster {i+1}: {clusters[i]}\n')
 
     AIC = []
     BIC = []
@@ -201,6 +210,24 @@ def pca_clustering_fun(X, Y):
     plt.title('Kmeans')
     plt.savefig('./figures/pca_kmeans.png')
 
+    kmeans = KMeans(k = K2, n_iter = 100)
+    kmeans.fit(X)
+    cost = kmeans.getCost()
+    print(f'Cost of Kmeans for k2: {cost}')
+    centroids = kmeans.centroids
+    labels = kmeans.labels
+
+    clusters = {}
+    print("Kmeans Clustering for k2\n")
+    for i in range(K2):
+        clusters[i] = []
+
+    for i in range(len(Y)):
+        clusters[labels[i]].append(Y[i])
+
+    for i in range(K2):
+        print(f'Cluster {i+1}: {clusters[i]}\n')
+
     pca = PCA(n_components = 200)
     pca.fit(X)
 
@@ -252,6 +279,20 @@ def pca_clustering_fun(X, Y):
     cost = kmeans.getCost()
     print(f'Cost of Kmeans for reduced Dataset: {cost}')
 
+    centroids = kmeans.centroids
+    labels = kmeans.labels
+
+    clusters = {}
+    print("Kmeans Clustering for k_kmeans3\n")
+    for i in range(K_KMEANS3):
+        clusters[i] = []
+
+    for i in range(len(Y)):
+        clusters[labels[i]].append(Y[i])
+
+    for i in range(K_KMEANS3):
+        print(f'Cluster {i+1}: {clusters[i]}\n')
+
     gmm = Gmm(k = K2, n_iter = 10)
     gmm.fit(X1)
 
@@ -263,6 +304,23 @@ def pca_clustering_fun(X, Y):
     plt.ylabel('Y')
     plt.title('GMM Clustering')
     plt.savefig("./figures/pca_gmm_clusters.png")
+
+    gmm = Gmm(k = K2, n_iter = 10)
+    gmm.fit(X)
+    print("Likelihood for original Dataset with k = k2: ", gmm.getLikelihood())
+
+    print("GMM Clustering for k2\n")
+    clusters = {}
+    for i in range(K2):
+        clusters[i] = []
+
+    gamma = gmm.getMembership()
+    for i in range(len(Y)):
+        clusters[np.argmax(gamma[i])].append(Y[i])
+
+    for i in range(K2):
+        print(f'Cluster {i+1}: {clusters[i]}\n')
+
 
     AIC = []
     BIC = []
@@ -303,6 +361,19 @@ def pca_clustering_fun(X, Y):
     gmm = Gmm(k = K_GMM3, n_iter = 10)
     gmm.fit(X2)
     print("Likelihood for reduced Dataset: ", gmm.getLikelihood())
+
+    print("GMM Clustering for k_gmm3\n")
+
+    clusters = {}
+    for i in range(K_GMM3):
+        clusters[i] = []
+    
+    gamma = gmm.getMembership()
+    for i in range(len(Y)):
+        clusters[np.argmax(gamma[i])].append(Y[i])
+
+    for i in range(K_GMM3):
+        print(f'Cluster {i+1}: {clusters[i]}\n')
     
 
 def hierarchical_fun(X, Y):

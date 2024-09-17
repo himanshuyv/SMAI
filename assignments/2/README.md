@@ -257,9 +257,13 @@ After PCA
 
 ## PCA + Clustering
 ### K-means Clustering Based on 2D Visualization
-- K-means clustering on the 2D PCA transformed data with k = k2, and number of dimensions = 2.
-
 ![PCA Plot](./figures/pca_kmeans.png)
+
+- K-means clustering on the 2D PCA transformed data with k = k2.
+- The cost(WCSS) for k = k2 for dataset is following.
+```
+Cost of Kmeans for k2: 4055.3350336015887
+```
 
 ### PCA + K-Means Clustering
 - Scree Plot
@@ -280,9 +284,14 @@ Hence `k_kmeans3 = 8`.
 
 ### GMM Clustering Based on 2D Visualization
 
-- GMM clustering on the 2D PCA transformed data with k = k2, and number of dimensions = 2.
-
 ![PCA Plot](./figures/pca_gmm_clusters.png)
+
+- GMM clustering on the 2D PCA transformed data with k = k2.
+- The Likelihood for k = k2 for dataset is following.
+```
+Likelihood for original Dataset with k = k2:  542268.2594889485
+```
+
 
 ###  PCA + GMMs
 
@@ -298,6 +307,119 @@ Hence `k_gmm3 = 4`.
 
 ###  K- Means Cluster Analysis
 
+- The clusters for k = k_means1 = 11
+```
+Cluster 1: ['helicopter', 'gym', 'rifle', 'van', 'microphone', 'laptop', 'calendar', 'calculator', 'envelope', 'ambulance', 'television', 'camera', 'car', 'telephone', 'bicycle', 'keyboard', 'radio', 'truck']
+
+Cluster 2: ['deer', 'panda', 'ape', 'cat', 'bear', 'giraffe', 'monkey', 'cow', 'pencil', 'sweater', 'sun', 'mouse', 'ant', 'goldfish', 'bee', 'beetle', 'tomato', 'lantern', 'elephant', 'pant', 'potato']
+
+Cluster 3: ['mug', 'microwave', 'bench', 'bucket', 'chair', 'candle', 'oven', 'dustbin', 'throne', 'loudspeaker', 'stove', 'toaster', 'suitcase']
+
+Cluster 4: ['shark', 'lizard', 'frog', 'starfish', 'peacock', 'snake', 'dragonfly', 'crocodile']
+
+Cluster 5: ['climb', 'stairs', 'basket', 'ladder', 'skate', 'length', 'basketball', 'walk']
+
+Cluster 6: ['listen', 'flame', 'knock', 'bury', 'download', 'postcard', 'hard', 'fight', 'call', 'hit', 'far', 'cry', 'sleep', 'clean', 'slide', 'draw', 'pray', 'arrest', 'email', 'buy', 'burn', 'fire', 'close', 'lazy', 'hang', 'book', 'enter', 'happy', 'loud', 'love', 'cook', 'recycle', 'cut']
+
+Cluster 7: ['eraser', 'carrot', 'grass', 'forest', 'brush', 'feather', 'passport', 'plant', 'notebook', 'knit', 'baseball', 'pear', 'saturn', 'fruit', 'grape', 'badminton', 'pillow', 'tree', 'toothbrush', 'parachute', 'toothpaste', 'comb', 'paintbrush']
+
+Cluster 8: ['drive', 'sing', 'rose', 'dive', 'sit', 'exit', 'brick', 'fishing', 'spider', 'bullet', 'eat', 'puppet', 'fly', 'lake', 'face', 'kiss', 'selfie', 'catch', 'paint', 'dig', 'run', 'clap', 'pull', 'cigarette', 'puppy', 'feet', 'empty', 'fish', 'drink', 'finger', 'bird', 'clock', 'spiderman', 'hammer', 'tattoo', 'earth', 'fingerprints', 'rain', 'tank', 'airplane', 'pizza', 'key', 'swim', 'zip', 'butterfly', 'rainy', 'wheel', 'shoe', 'sunny']
+
+Cluster 9: ['smile', 'scream', 'hollow', 'sad', 'angry', 'scary']
+
+Cluster 10: ['table', 'roof', 'bed', 'jacket', 'boat', 'door', 'igloo', 'tent']
+
+Cluster 11: ['needle', 'spoon', 'bend', 'kneel', 'flute', 'scissor', 'screwdriver', 'teaspoon', 'sword', 'knife', 'windmill', 'arrow', 'fork']
+```
+
+- The clusters for k = k2 = 4
+```
+Cluster 1: ['drive', 'rose', 'dive', 'fishing', 'shark', 'grass', 'forest', 'lake', 'climb', 'kiss', 'roof', 'stairs', 'plant', 'baseball', 'bucket', 'feet', 'boat', 'basket', 'fish', 'door', 'badminton', 'ladder', 'bird', 'clock', 'tree', 'skate', 'dustbin', 'rain', 'airplane', 'pizza', 'swim', 'sword', 'rainy', 'basketball', 'wheel', 'bicycle', 'windmill', 'arrow', 'shoe', 'walk', 'truck']        
+
+Cluster 2: ['needle', 'eraser', 'table', 'carrot', 'brush', 'mug', 'feather', 'spoon', 'puppet', 'gym', 'passport', 'rifle', 'pencil', 'bed', 'microwave', 'notebook', 'knit', 'sweater', 'cigarette', 'microphone', 'jacket', 'bench', 'flute', 'scissor', 'laptop', 'calendar', 'chair', 'finger', 'candle', 'igloo', 'oven', 'calculator', 'pillow', 'envelope', 'hammer', 'toothbrush', 'screwdriver', 'fingerprints', 'teaspoon', 'length', 'ambulance', 'television', 'throne', 'tent', 'camera', 'car', 'loudspeaker', 'telephone', 'stove', 'knife', 'toothpaste', 'toaster', 'comb', 'keyboard', 'fork', 'radio', 'suitcase', 'paintbrush']
+
+Cluster 3: ['deer', 'panda', 'ape', 'helicopter', 'cat', 'bear', 'spider', 'giraffe', 'lizard', 'frog', 'monkey', 'cow', 'starfish', 'van', 'sun', 'pear', 'peacock', 'saturn', 'fruit', 'grape', 'mouse', 'ant', 'goldfish', 'spiderman', 'bee', 'beetle', 'snake', 'tomato', 'dragonfly', 'parachute', 'butterfly', 'lantern', 'elephant', 'pant', 'potato', 'crocodile']
+
+Cluster 4: ['sing', 'listen', 'flame', 'sit', 'knock', 'exit', 'brick', 'smile', 'bullet', 'bury', 'download', 'eat', 'postcard', 'hard', 'bend', 'fight', 'call', 'fly', 'face', 'kneel', 'scream', 'selfie', 'catch', 'hit', 'paint', 'far', 'dig', 'cry', 'run', 'clap', 'pull', 'sleep', 'hollow', 'puppy', 'clean', 'sad', 'empty', 'slide', 'drink', 'draw', 'pray', 'arrest', 'email', 'buy', 'burn', 'fire', 'close', 'angry', 'lazy', 'scary', 'hang', 'book', 'tattoo', 'earth', 'tank', 'enter', 'key', 'zip', 'happy', 'loud', 'love', 'cook', 'recycle', 'cut', 'sunny']
+```
+
+- The clusters for k = k_kmeans3 = 8
+```
+Cluster 1: ['listen', 'flame', 'knock', 'bury', 'download', 'postcard', 'hard', 'fight', 'call', 'hit', 'paint', 'far', 'cry', 'clap', 'sleep', 'clean', 'sad', 'slide', 'draw', 'pray', 'arrest', 'email', 'buy', 'burn', 'fire', 'close', 'angry', 'lazy', 'scary', 'hang', 'book', 'enter', 'happy', 'loud', 'love', 'cook', 'recycle', 'cut']
+
+Cluster 2: ['deer', 'carrot', 'spider', 'shark', 'lizard', 'frog', 'scream', 'ant', 'spiderman', 'beetle', 'snake', 'pizza', 'butterfly', 'arrow']
+
+Cluster 3: ['drive', 'sing', 'rose', 'dive', 'exit', 'brick', 'fishing', 'smile', 'bear', 'bullet', 'grass', 'bend', 'puppet', 'fly', 'face', 'climb', 'kneel', 'monkey', 'kiss', 'passport', 'selfie', 'catch', 'plant', 'microwave', 'notebook', 'pull', 'baseball', 'hollow', 'bucket', 'puppy', 'boat', 'basket', 'empty', 'fish', 'drink', 'door', 'mouse', 'finger', 'candle', 'bird', 'clock', 'oven', 'tree', 'envelope', 'skate', 'hammer', 'tattoo', 'earth', 'fingerprints', 'dustbin', 'tank', 'airplane', 'key', 'zip', 'loudspeaker', 'telephone', 'stove', 'basketball', 'wheel', 'bicycle', 'toaster', 'shoe', 'walk', 'keyboard', 'sunny', 'radio', 'truck']
+
+Cluster 4: ['panda', 'ape', 'cat', 'eraser', 'mug', 'eat', 'gym', 'roof', 'rifle', 'cow', 'pencil', 'bed', 'dig', 'run', 'van', 'microphone', 'sun', 'feet', 'fruit', 'grape', 'laptop', 'calendar', 'calculator', 'bee', 'ambulance', 'television', 'tent', 'camera', 'tomato', 'car', 'pant', 'potato']
+
+Cluster 5: ['forest', 'lake', 'rain', 'swim', 'rainy']
+
+Cluster 6: ['sit', 'table', 'stairs', 'sweater', 'jacket', 'bench', 'chair', 'ladder', 'pillow', 'throne', 'suitcase']
+
+Cluster 7: ['brush', 'feather', 'spoon', 'knit', 'cigarette', 'flute', 'scissor', 'badminton', 'toothbrush', 'screwdriver', 'teaspoon', 'length', 'sword', 'knife', 'toothpaste', 'comb', 'fork', 'paintbrush']
+
+Cluster 8: ['helicopter', 'needle', 'giraffe', 'starfish', 'pear', 'peacock', 'saturn', 'igloo', 'goldfish', 'dragonfly', 'parachute', 'lantern', 'elephant', 'windmill', 'crocodile']
+```
+
+The cost(WCSS) for k = k_kmeans1 = 11, k = k2 = 4 and k = k_kmeans3 = 8 for the original dataset is as follows:
+```
+Cost of Kmeans for k_kmeans1: 3723.25035998532
+Cost of Kmeans for k2: 4055.3350336015887
+Cost of Kmeans for k_kmeans3: 3633.909127962344
+```
+Here we can see that least cost is for k = k_kmeans3 = 8. And also the most of the clusters are meaningful in this case.
+
+Hence, `k_kmeans = 8`.
+
+### GMM Cluster Analysis
+
+- The clusters for k = k_gmm1 = 3
+```
+Cluster 1: ['drive', 'deer', 'dive', 'eraser', 'table', 'exit', 'fishing', 'shark', 'giraffe', 'lizard', 'feather', 'frog', 'lake', 'climb', 'roof', 'stairs', 'starfish', 'microwave', 'notebook', 'cigarette', 'microphone', 'baseball', 'bench', 'feet', 'boat', 'pear', 'basket', 'saturn', 'slide', 'flute', 'grape', 'badminton', 'mouse', 'igloo', 'goldfish', 'spiderman', 'tree', 'beetle', 'skate', 'toothbrush', 'snake', 'tattoo', 'dustbin', 'airplane', 'pizza', 'swim', 'dragonfly', 'butterfly', 'sword', 'loudspeaker', 'telephone', 'elephant', 'stove', 'knife', 'toothpaste', 'basketball', 'bicycle', 'windmill', 'toaster', 'comb', 'shoe', 'walk', 'keyboard', 'truck', 'suitcase']
+
+Cluster 2: ['sing', 'listen', 'rose', 'flame', 'knock', 'brick', 'smile', 'bear', 'bury', 'download', 'forest', 'postcard', 'hard', 'fight', 'call', 'fly', 'face', 'scream', 'monkey', 'kiss', 'passport', 'selfie', 'catch', 'hit', 'paint', 'plant', 'far', 'cry', 'clap', 'sleep', 'puppy', 'clean', 'sad', 'empty', 'fish', 'drink', 'draw', 'pray', 'arrest', 'email', 'buy', 'bird', 'clock', 'burn', 'fire', 'close', 'angry', 'lazy', 'scary', 'hang', 'book', 'earth', 'fingerprints', 'rain', 'tank', 'enter', 'key', 'happy', 'loud', 'love', 'rainy', 'cook', 'recycle', 'cut', 'sunny', 'radio']
+
+Cluster 3: ['panda', 'ape', 'helicopter', 'sit', 'cat', 'needle', 'carrot', 'spider', 'bullet', 'grass', 'brush', 'mug', 'eat', 'spoon', 'bend', 'puppet', 'gym', 'kneel', 'rifle', 'cow', 'pencil', 'bed', 'dig', 'run', 'pull', 'knit', 'van', 'sweater', 'hollow', 'jacket', 'sun', 'bucket', 'peacock', 'fruit', 'scissor', 'laptop', 'door', 'calendar', 'chair', 'ladder', 'finger', 'candle', 'ant', 'oven', 'calculator', 'bee', 'pillow', 'envelope', 'hammer', 'screwdriver', 'teaspoon', 'length', 'ambulance', 'television', 'throne', 'tent', 'camera', 'zip', 'tomato', 'parachute', 'car', 'lantern', 'pant', 'wheel', 'arrow', 'potato', 'crocodile', 'fork', 'paintbrush']
+```
+
+- The clusters for k = k2 = 4
+```
+Cluster 1: ['drive', 'sing', 'listen', 'dive', 'flame', 'knock', 'exit', 'brick', 'bullet', 'bury', 'download', 'brush', 'eat', 'postcard', 'hard', 'bend', 'fight', 'puppet', 'call', 'fly', 'face', 'climb', 'kneel', 'scream', 'catch', 'hit', 'paint', 'far', 'cry', 'clap', 'baseball', 'hollow', 'puppy', 'clean', 'basket', 'sad', 'empty', 'drink', 'draw', 'pray', 'arrest', 'email', 'buy', 'burn', 'fire', 'close', 'angry', 'lazy', 'scary', 'hang', 'hammer', 'book', 'snake', 'tattoo', 'earth', 'fingerprints', 'length', 'rain', 'tank', 'enter', 'key', 'zip', 'sword', 'happy', 'loud', 'love', 'rainy', 'knife', 'cook', 'basketball', 'wheel', 'bicycle', 'arrow', 'recycle', 'cut', 'walk', 'sunny']
+
+Cluster 2: ['panda', 'helicopter', 'carrot', 'fishing', 'spider', 'shark', 'giraffe', 'lizard', 'feather', 'frog', 'lake', 'starfish', 'notebook', 'knit', 'cigarette', 'bucket', 'fish', 'saturn', 'flute', 'badminton', 'candle', 'igloo', 'goldfish', 'bird', 'spiderman', 'toothbrush', 'dustbin', 'airplane', 'pizza', 'swim', 'tomato', 'dragonfly', 'parachute', 'butterfly', 'loudspeaker', 'lantern', 'elephant', 'toothpaste', 'windmill', 'toaster', 'crocodile', 'suitcase', 'paintbrush']
+
+Cluster 3: ['deer', 'ape', 'needle', 'eraser', 'bear', 'grass', 'forest', 'spoon', 'monkey', 'passport', 'pencil', 'plant', 'microwave', 'jacket', 'pear', 'peacock', 'fruit', 'scissor', 'grape', 'door', 'mouse', 'finger', 'ant', 'oven', 'tree', 'beetle', 'skate', 'screwdriver', 'teaspoon', 'telephone', 'pant', 'potato', 'comb', 'fork']
+
+Cluster 4: ['rose', 'sit', 'cat', 'table', 'smile', 'mug', 'gym', 'kiss', 'selfie', 'roof', 'stairs', 'rifle', 'cow', 'bed', 'dig', 'run', 'pull', 'sleep', 'van', 'sweater', 'microphone', 'bench', 'sun', 'feet', 'boat', 'slide', 'laptop', 'calendar', 'chair', 'ladder', 'clock', 'calculator', 'bee', 'pillow', 'envelope', 'ambulance', 'television', 'throne', 'tent', 'camera', 'car', 'stove', 'shoe', 'keyboard', 'radio', 'truck']
+```
+
+- The clusters for k = k_gmm3 = 4
+```
+Cluster 1: ['deer', 'panda', 'ape', 'rose', 'helicopter', 'bear', 'spider', 'shark', 'giraffe', 'lizard', 'hard', 'frog', 'fly', 'scream', 'monkey', 'starfish', 'clap', 'knit', 'van', 'sweater', 'baseball', 'hollow', 'sun', 'mouse', 'ant', 'spiderman', 'hang', 'beetle', 'skate', 'snake', 'airplane', 'pizza', 'tomato', 'dragonfly', 'parachute', 'butterfly', 'elephant', 'pant', 'basketball', 'arrow', 'crocodile']
+
+Cluster 2: ['drive', 'sing', 'listen', 'dive', 'flame', 'sit', 'knock', 'table', 'exit', 'smile', 'grass', 'download', 'postcard', 'fight', 'call', 'gym', 'lake', 'face', 'climb', 'kiss', 'roof', 'stairs', 'rifle', 'catch', 'hit', 'bed', 'paint', 'far', 'microwave', 'cry', 'run', 'sleep', 'jacket', 'bench', 'clean', 'peacock', 'fish', 'slide', 'fruit', 'laptop', 'door', 'draw', 'calendar', 'pray', 'arrest', 'email', 'buy', 'bird', 'clock', 'oven', 'calculator', 'burn', 'pillow', 'fire', 'close', 'angry', 'lazy', 'scary', 'tree', 'envelope', 'book', 'tattoo', 'earth', 'ambulance', 'television', 'camera', 'car', 'happy', 'love', 'cook', 'wheel', 'windmill', 'cut', 'walk', 'keyboard', 'sunny', 'radio', 'truck']
+
+Cluster 3: ['needle', 'eraser', 'carrot', 'fishing', 'brush', 'feather', 'eat', 'spoon', 'bend', 'puppet', 'passport', 'pencil', 'pull', 'cigarette', 'microphone', 'pear', 'empty', 'saturn', 'flute', 'scissor', 'badminton', 'finger', 'hammer', 'toothbrush', 'screwdriver', 'fingerprints', 'teaspoon', 'length', 'key', 'zip', 'sword', 'telephone', 'knife', 'toothpaste', 'toaster', 'comb', 'fork', 'paintbrush']
+
+Cluster 4: ['cat', 'brick', 'bullet', 'bury', 'forest', 'mug', 'kneel', 'selfie', 'cow', 'plant', 'dig', 'notebook', 'bucket', 'puppy', 'feet', 'boat', 'basket', 'sad', 'drink', 'grape', 'chair', 'ladder', 'candle', 'igloo', 'goldfish', 'bee', 'dustbin', 'rain', 'tank', 'enter', 'throne', 'swim', 'tent', 'loudspeaker', 'lantern', 'loud', 'stove', 'rainy', 'bicycle', 'recycle', 'potato', 'shoe', 'suitcase']
+```
+
+The likelihood for k = k_gmm1 = 3, k = k2 = 4 and k = k_gmm3 = 4 for the original dataset is as follows:
+
+```
+Likelihood for original Dataset with k_gmm1:  522241.37061497767
+Likelihood for original Dataset with k2:  542268.2594889485
+Likelihood for original Dataset with k_gmm3:  89705.35369496288
+```
+
+For this I am not finding any meaningful clusters. But for less complexity we can take k = k_gmm3 = 4. As this is for the reduced dataset.
+
+### Compare K-Means and GMMs
+
+As Explained above with my analysis for this given dataset the k-means is giving better results as compared to the GMMs. As the clusters are more meaningful in the case of k-means as compared to the GMMs.
+
+### Compare K-Means and GMMs
 
 ## Hierarchical Clustering
 
