@@ -3,6 +3,7 @@ import pandas as pd
 import matplotlib.pyplot as plt
 from sklearn.mixture import GaussianMixture
 from scipy.cluster.hierarchy import dendrogram, linkage, fcluster
+import time
 
 import sys
 sys.path.append('./../../')
@@ -27,7 +28,7 @@ Y_small = df_small['color'].to_numpy()
 
 K_KMEANS1_SMALL = 3
 K_KMEANS1 = 11
-K_GMM1 = 2
+K_GMM1 = 3
 K2 = 4
 K_KMEANS3 = 8
 K_GMM3 = 4
@@ -103,7 +104,6 @@ def gmm_fun(k_, X, Y, type="small"):
         gmm.fit(X)
         AIC.append(gmm.aic())
         BIC.append(gmm.bic())
-        print("likelihood: ", gmm.getLikelihood())
 
     plt.figure()
     plt.plot(range(1, 11), AIC, marker = 'o', label = 'AIC')
@@ -118,7 +118,7 @@ def gmm_fun(k_, X, Y, type="small"):
     gmm = GaussianMixture(n_components = 10, max_iter = 10)
     gmm.fit(X)
 
-    print("Inbuilt GMM Likelihood: ", gmm.score(X))
+    print("Inbuilt GMM Likelihood: ", gmm.score(X)*X.shape[0])
 
 
     AIC_inbuilt = []
@@ -213,7 +213,7 @@ def pca_clustering_fun(X, Y):
     plt.title('Explained Variance')
     plt.savefig("./figures/pca_explained_variance.png")
 
-    n = 10
+    n = len(explained_var)
 
     global PCA_DIM
     for i in range(1, len(explained_var)+1):
@@ -306,11 +306,11 @@ def pca_clustering_fun(X, Y):
     
 
 def hierarchical_fun(X, Y):
-    linkage_methods = ['single', 'complete', 'average', 'ward', 'weighted']
+    linkage_methods = ['single', 'complete', 'average', 'ward', 'centroid']
     dendrograms = {}
 
     for method in linkage_methods:
-        if method == 'ward':
+        if method == 'ward' or method == 'centroid':
             distance_methods = ['euclidean']
         else:
             distance_methods = ['euclidean', 'cosine']
@@ -364,6 +364,29 @@ def pca_knn_fun():
     X = df_numerical
     Y = df['track_genre']
 
+    x_train_full = X[:int(0.8*len(df))]
+    y_train_full = Y[:int(0.8*len(df))]
+    x_test_full = X[int(0.8*len(df)):]
+    y_test_full = Y[int(0.8*len(df)):]
+
+    knn = KNN(20)
+    knn.fit(x_train_full, y_train_full)
+    start_time = time.time()
+    y_pred_full = knn.predict(x_test_full, distance_metric='manhattan')
+    end_time = time.time()
+    inference_time_full = end_time - start_time
+
+    score = Scores(y_test_full, y_pred_full)
+    print("Full Dataset")
+    print(f'Accuracy: {score.accuracy}')
+    print(f'Micro Precision: {score.micro_precision}')
+    print(f'Micro Recall: {score.micro_recall}')
+    print(f'Micro F1: {score.micro_f1}')
+    print(f'Macro Precision: {score.macro_precision}')
+    print(f'Macro Recall: {score.macro_recall}')
+    print(f'Macro F1: {score.macro_f1}')
+
+
     n = X.shape[1]
 
     pca = PCA(n_components = n)
@@ -371,6 +394,15 @@ def pca_knn_fun():
     pca.fit(X)
 
     explained_var = pca.getExplainedVariance()
+
+    n_components = 0
+    for i in range(1, len(explained_var)+1):
+        if explained_var[i] > 0.95:
+            n_components = i
+            break
+    
+    print(f"Number of components for 95% variance: {n_components}")
+
     plt.figure()
     plt.plot(range(1, len(explained_var) + 1), explained_var, marker = 'o')
     plt.xlabel('Number of components')
@@ -385,7 +417,7 @@ def pca_knn_fun():
     plt.title('Eigenvalues Fraction')
     plt.savefig("./figures/pca_knn_eigenvalues_fraction.png")
 
-    pca = PCA(n_components = 10)
+    pca = PCA(n_components = n_components)
     pca.fit(X)
     X1 = pca.transform(X)
 
@@ -400,10 +432,15 @@ def pca_knn_fun():
     knn = KNN(k)
     knn.fit(x_train, y_train)
 
+    start_time = time.time()
     y_pred = knn.predict(x_validate, distance_metric='manhattan')
+    end_time = time.time()
+
+    inference_time = end_time - start_time
 
     score = Scores(y_validate, y_pred)
     accuracy = score.accuracy
+    print("Reduced Dataset")
     print(f'Accuracy: {accuracy}')
     print(f'Micro Precision: {score.micro_precision}')
     print(f'Micro Recall: {score.micro_recall}')
@@ -411,6 +448,13 @@ def pca_knn_fun():
     print(f'Macro Precision: {score.macro_precision}')
     print(f'Macro Recall: {score.macro_recall}')
     print(f'Macro F1: {score.macro_f1}')
+
+    plt.figure()
+    plt.bar(['Full', 'Reduced'], [inference_time_full, inference_time])
+    plt.xlabel('Dataset')
+    plt.ylabel('Inference Time')
+    plt.title('Inference Time Comparison')
+    plt.savefig("./figures/pca_knn_inference_time.png")
 
 subtask_lists = ["3: Kmeans", "4: GMM", "5: PCA", "6: PCA+Clustering", "7: Comparison", "8: Hierarchical", "9: PCA+KNN", "10: Exit"]
 
@@ -433,7 +477,7 @@ while True:
         print("Choose a dataset: 1: Small, 2: Big")
         dataset = int(input("Enter the dataset number: "))
         if dataset == 1:
-            gmm_fun(K_GMM1, X_small, Y_small)
+            gmm_fun(3, X_small, Y_small)
         elif dataset == 2:
             gmm_fun(K_GMM1, X_big, Y_big, "big")
 

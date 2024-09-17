@@ -21,7 +21,7 @@ class PCA:
         X = X - self.means
         return np.dot(X, self.eig_vectors[:, :self.n_components])
 
-    def checkPCA(self, X):
+    def checkPCA(self, X, threshold=0.1):
         if (self.eig_vectors is None) or (self.eig_values is None):
             return False
         
@@ -31,7 +31,15 @@ class PCA:
         if (self.n_components > self.eig_vectors.shape[1]):
             return False
 
-        return True
+        X = X - self.means
+
+        X_reduced = np.dot(X, self.eig_vectors[:, :self.n_components])
+
+        X_original = np.dot(X_reduced, self.eig_vectors[:, :self.n_components].T)
+
+        error = np.mean(np.square(X - X_original))
+
+        return error < threshold
     
     def getExplainedVariance(self):
         sum1 = np.cumsum(self.eig_values[:self.n_components])
