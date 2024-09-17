@@ -376,7 +376,7 @@ def pca_clustering_fun(X, Y):
         print(f'Cluster {i+1}: {clusters[i]}\n')
     
 
-def hierarchical_fun(X, Y):
+def hierarchical_fun(X, Y, kbest1, kbest2):
     linkage_methods = ['single', 'complete', 'average', 'ward', 'centroid']
     dendrograms = {}
 
@@ -394,30 +394,29 @@ def hierarchical_fun(X, Y):
             plt.tight_layout()
             plt.savefig(f"./figures/dendrogram_{method}_{distance}.png")
 
-
     best_method = 'complete'
     best_distance = 'euclidean'
 
+    Z_best = dendrograms[f"{best_method}_{best_distance}"]
 
-    def print_clusters(kbest):
-        Z = dendrograms[f"{best_method}_{best_distance}"]
-        clusters = fcluster(Z, kbest, criterion='maxclust')
+    def print_clusters(kbest, clusters, label):
         clusters_list = [] 
-        for i in range(1, kbest+1):
+        for i in range(1, kbest + 1):
             cluster = [Y[j] for j in range(len(clusters)) if clusters[j] == i]
             clusters_list.append(cluster)
+        print(f"\nClusters for {label} (k={kbest}):")
         for i in range(kbest):
-            print(f"Cluster {i+1}: {clusters_list[i]}")
+            print(f"Cluster {i+1}: {clusters_list[i]}\n")
 
+    clusters_kbest1 = fcluster(Z_best, kbest1, criterion='maxclust')
+    clusters_kbest2 = fcluster(Z_best, kbest2, criterion='maxclust')
 
-    kbest1 = K_KMEANS1
-    kbest2 = K_GMM1
+    print("\nKmeans best k clusters")
+    print_clusters(kbest1, clusters_kbest1, "K-Means best k")
 
-    print("\nKmeans best k\n")
-    print_clusters(kbest1)
+    print("\nGMM best k clusters")
+    print_clusters(kbest2, clusters_kbest2, "GMM best k")
 
-    print("\nGmm best k\n")
-    print_clusters(kbest2)
 
 def pca_knn_fun():
     df = pd.read_csv("./../../data/external/spotify.csv")
@@ -562,7 +561,7 @@ while True:
         pass
 
     elif subtask == 8:
-        hierarchical_fun(X_big, Y_big)
+        hierarchical_fun(X_big, Y_big, K_KMEANS3, K_GMM3)
 
     elif subtask == 9:
         pca_knn_fun()

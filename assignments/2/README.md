@@ -449,6 +449,40 @@ Plots For different linkage methods and different distance metrics
 - Centroid Linkage with Euclidean Distance
 ![Centroid Linkage](./figures/dendrogram_centroid_euclidean.png)
 
+```
+Clusters for K-Means best k (k=8):
+Cluster 1: ['sit', 'eat', 'dig', 'run', 'clap', 'sad', 'buy']
+
+Cluster 2: ['drive', 'sing', 'listen', 'dive', 'flame', 'knock', 'exit', 'brick', 'smile', 'bullet', 'bury', 'download', 'postcard', 'hard', 'bend', 'fight', 'puppet', 'call', 'face', 'scream', 'kiss', 'passport', 'selfie', 'catch', 'hit', 'paint', 'far', 'cry', 'pull', 'sleep', 'cigarette', 'hollow', 'clean', 'empty', 'slide', 'drink', 'door', 'draw', 'pray', 'arrest', 'finger', 'burn', 'fire', 'close', 'angry', 'lazy', 'scary', 'hang', 'book', 'tattoo', 'earth', 'fingerprints', 'dustbin', 'tank', 'enter', 'key', 'swim', 'zip', 'loudspeaker', 'happy', 'telephone', 'loud', 'love', 'cook', 'arrow', 'recycle', 'cut', 'truck']
+
+Cluster 3: ['rose', 'helicopter', 'table', 'fishing', 'bear', 'spider', 'shark', 'grass', 'forest', 'lizard', 'mug', 'lake', 'kneel', 'plant', 'microwave', 'notebook', 'baseball', 'bench', 'bucket', 'puppy', 'feet', 'boat', 'pear', 'basket', 'fish', 'fruit', 'grape', 'laptop', 'calendar', 'chair', 'mouse', 'email', 'oven', 'calculator', 'spiderman', 'tree', 'envelope', 'skate', 'snake', 'airplane', 'ambulance', 'pizza', 'throne', 'stove', 'basketball', 'bicycle', 'toaster', 'shoe', 'walk', 'keyboard', 'suitcase']
+
+Cluster 4: ['needle', 'eraser', 'brush', 'feather', 'spoon', 'fly', 'climb', 'roof', 'stairs', 'rifle', 'pencil', 'bed', 'jacket', 'flute', 'scissor', 'ladder', 'bird', 'clock', 'pillow', 'hammer', 'toothbrush', 'screwdriver', 'teaspoon', 'length', 'rain', 'tent', 'parachute', 'sword', 'rainy', 'knife', 'toothpaste', 'wheel', 'windmill', 'comb', 'fork', 'paintbrush']
+
+Cluster 5: ['gym', 'van', 'microphone', 'sun', 'candle', 'television', 'camera', 'tomato', 'car', 'lantern', 'pant', 'potato', 'sunny', 'radio']
+
+Cluster 6: ['deer', 'panda', 'ape', 'cat', 'carrot', 'giraffe', 'frog', 'monkey', 'cow', 'starfish', 'saturn', 'ant', 'goldfish', 'bee', 'beetle', 'dragonfly', 'butterfly', 'elephant', 'crocodile']
+
+Cluster 7: ['knit', 'sweater', 'peacock', 'igloo']
+
+Cluster 8: ['badminton']
+```
+There is very less similarity between the clusters of K-Means and Hierarchical Clustering. Hence these clusters do not align with the clusters of K-Means.
+
+```
+Clusters for GMM best k (k=4):
+Cluster 1: ['sit', 'eat', 'dig', 'run', 'clap', 'sad', 'buy']
+
+Cluster 2: ['drive', 'sing', 'listen', 'dive', 'flame', 'knock', 'exit', 'brick', 'smile', 'bullet', 'bury', 'download', 'postcard', 'hard', 'bend', 'fight', 'puppet', 'call', 'face', 'scream', 'kiss', 'passport', 'selfie', 'catch', 'hit', 'paint', 'far', 'cry', 'pull', 'sleep', 'cigarette', 'hollow', 'clean', 'empty', 'slide', 'drink', 'door', 'draw', 'pray', 'arrest', 'finger', 'burn', 'fire', 'close', 'angry', 'lazy', 'scary', 'hang', 'book', 'tattoo', 'earth', 'fingerprints', 'dustbin', 'tank', 'enter', 'key', 'swim', 'zip', 'loudspeaker', 'happy', 'telephone', 'loud', 'love', 'cook', 'arrow', 'recycle', 'cut', 'truck']
+
+Cluster 3: ['deer', 'panda', 'ape', 'rose', 'helicopter', 'cat', 'needle', 'eraser', 'table', 'carrot', 'fishing', 'bear', 'spider', 'shark', 'grass', 'giraffe', 'forest', 'lizard', 'brush', 'mug', 'feather', 'spoon', 'frog', 'fly', 'gym', 'lake', 'climb', 'kneel', 'monkey', 'roof', 'stairs', 'rifle', 'cow', 'pencil', 'bed', 'starfish', 'plant', 'microwave', 'notebook', 'van', 'microphone', 'baseball', 'jacket', 'bench', 'sun', 'bucket', 'puppy', 'feet', 'boat', 'pear', 'basket', 'fish', 'saturn', 'flute', 'fruit', 'scissor', 'grape', 'laptop', 'calendar', 'chair', 'mouse', 'ladder', 'email', 'candle', 'ant', 'goldfish', 'bird', 'clock', 'oven', 'calculator', 'spiderman', 'bee', 'pillow', 'tree', 'beetle', 'envelope', 'skate', 'hammer', 'toothbrush', 'screwdriver', 'snake', 'teaspoon', 'length', 'rain', 'airplane', 'ambulance', 'pizza', 'television', 'throne', 'tent', 'camera', 'tomato', 'dragonfly', 'parachute', 'butterfly', 'car', 'sword', 'lantern', 'elephant', 'pant', 'stove', 'rainy', 'knife', 'toothpaste', 'basketball', 'wheel', 'bicycle', 'windmill', 'toaster', 'potato', 'comb', 'crocodile', 'shoe', 'walk', 'keyboard', 'fork', 'sunny', 'radio', 'suitcase', 'paintbrush']
+
+Cluster 4: ['knit', 'sweater', 'peacock', 'badminton', 'igloo']
+```
+
+There is very less similarity between the clusters of GMM and Hierarchical Clustering. Hence these clusters do not align with the clusters of GMM.
+
+In both the cases the Hierarchical clustering is more meaningful as compared to the K-Means and GMMs.
 
 ## Nearst Neighbour Search
 
