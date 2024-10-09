@@ -23,8 +23,6 @@ class MLP:
         self.Y = Y
         self.n_samples, self.n_features = X.shape
         self.n_classes = np.max(Y) + 1
-        if np.min(Y) != 0:
-            raise ValueError("Class labels should start from 0.")
 
         self.weights = self.initialize_weights()
         self.biases = self.initialize_biases()
@@ -130,29 +128,4 @@ class MLP:
         one_hot[np.arange(Y.size), Y] = 1
         return one_hot
 
-    def gradient_check(self, X, Y, epsilon=1e-7):
-        self.forward_propagation(X)
-        self.backward_propagation(self.one_hot_encode(Y))
-        
-        for i in range(len(self.weights)):
-            for j in range(self.weights[i].shape[0]):
-                for k in range(self.weights[i].shape[1]):
-                    original_value = self.weights[i][j, k]
-                    
-                    self.weights[i][j, k] = original_value + epsilon
-                    loss_plus = self.compute_loss(self.predict(X), Y)
-                    
-                    self.weights[i][j, k] = original_value - epsilon
-                    loss_minus = self.compute_loss(self.predict(X), Y)
-
-                    self.weights[i][j, k] = original_value
-                    
-                    numerical_grad = (loss_plus - loss_minus) / (2 * epsilon)
-
-                    analytical_grad = np.dot(self.activations[i].T, self.errors[i + 1])[j, k]
-                    
-                    if not np.isclose(numerical_grad, analytical_grad, atol=1e-7):
-                        print(f"Gradient check failed at weight[{i}][{j},{k}]: numerical_grad={numerical_grad}, analytical_grad={analytical_grad}")
-                        return False
-        print("Gradient check passed")
-        return True
+    

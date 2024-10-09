@@ -43,14 +43,17 @@ Y_validation = Y[int(0.8*len(Y)):int(0.9*len(Y))]
 X_test = X[int(0.9*len(X)):]
 Y_test = Y[int(0.9*len(Y)):]
 
-mlp = MLP(n_epochs=100, n_hidden=4, neurons_per_layer=[64,64,64,64], activation_function='relu', loss_function='mean_squared_error', optimizer='sgd')
+mlp = MLP(n_epochs=1000, n_hidden=3, neurons_per_layer=[64,32], activation_function='sigmoid', loss_function='mean_squared_error', optimizer='sgd', batch_size=32)
 
-Y_train = Y_train - min(Y_train)
+Y_train = Y_train
 mlp.fit(X_train, Y_train)
 
 Y_pred = mlp.predict(X_test)
-Y_pred = Y_pred + 3
+Y_pred = Y_pred
 print(Y_pred)
 print('y_test:', Y_test)
 scores = Scores(Y_test, Y_pred)
 print("Accuracy: ", scores.accuracy)
+
+
+mlp.gradient_check(X_train, Y_train)
