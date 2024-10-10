@@ -1,4 +1,10 @@
 import numpy as np
+import wandb
+
+import sys
+sys.path.append('./../../')
+
+from performance_measures.knn_score import Scores
 
 class MLP:
     def __init__(self, learning_rate=0.01, n_epochs=1000, n_hidden=2, batch_size=32, neurons_per_layer=None,
@@ -33,25 +39,46 @@ class MLP:
                 X_batch = X[i:i+self.batch_size]
                 Y_batch = Y[i:i+self.batch_size]
                 Y_batch_one_hot = self.one_hot_encode(Y_batch) if self.n_classes > 1 else Y_batch.reshape(-1, 1)
-                
                 self.forward_propagation(X_batch)
                 self.backward_propagation(Y_batch_one_hot)
                 self.update_weights()
 
-            if self.early_stopping and X_val is not None and Y_val is not None:
-                val_loss = self.compute_loss(self.predict(X_val), Y_val)
-                if val_loss < self.best_loss:
-                    self.best_loss = val_loss
-                    self.best_weights = {k: v.copy() for k, v in self.weights.items()}
-                    self.best_biases = {k: v.copy() for k, v in self.biases.items()}
-                    stop_counter = 0
-                else:
-                    stop_counter += 1
-                    if stop_counter >= self.patience:
-                        print(f"Early stopping at epoch {epoch}")
-                        self.weights = self.best_weights
-                        self.biases = self.best_biases
-                        break
+            if (X_val is not None and Y_val is not None):
+                # Y_one_hot_train = self.one_hot_encode(Y)
+                # Y_one_hot_val = self.one_hot_encode(Y_val)
+                Y_val_pred = self.predict(X_val)
+                Y_train_pred = self.predict(X)
+                # val_loss = self.compute_loss(Y_val_pred, Y_one_hot_train)
+                # train_loss = self.compute_loss(Y_train_pred, Y_one_hot_val)
+                score_val = Scores(Y_val_pred, Y_val)
+                score_train = Scores(Y_train_pred, Y)
+                # print("Started Logging ...")
+                wandb.log({
+                           'train_accuracy':score_train.accuracy, 
+                           'val_accuracy':score_val.accuracy,
+                           'train_precision':score_train.macro_precision,
+                            'val_precision':score_val.macro_precision,
+                            'train_recall':score_train.macro_recall,
+                            'val_recall':score_val.macro_recall,
+                            'train_f1':score_train.macro_f1,
+                            'val_f1':score_val.macro_f1
+                           })
+                # print("Logging Done ...")
+
+            # if self.early_stopping and X_val is not None and Y_val is not None: 
+
+            #     if val_loss < self.best_loss:
+            #         self.best_loss = val_loss
+            #         self.best_weights = {k: v.copy() for k, v in self.weights.items()}
+            #         self.best_biases = {k: v.copy() for k, v in self.biases.items()}
+            #         stop_counter = 0
+            #     else:
+            #         stop_counter += 1
+            #         if stop_counter >= self.patience:
+            #             print(f"Early stopping at epoch {epoch}")
+            #             self.weights = self.best_weights
+            #             self.biases = self.best_biases
+            #             break
 
     def initialize_weights(self):
         weights = {}
@@ -127,5 +154,3 @@ class MLP:
         one_hot = np.zeros((Y.size, self.n_classes))
         one_hot[np.arange(Y.size), Y] = 1
         return one_hot
-
-    

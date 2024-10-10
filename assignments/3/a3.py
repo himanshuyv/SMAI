@@ -2,12 +2,42 @@ import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 from sklearn.preprocessing import StandardScaler
+import wandb
 
 import sys
 sys.path.append('./../../')
 
 from models.mlp.mlp import MLP
 from performance_measures.knn_score import Scores
+
+sweep_config = {
+    'method': 'grid',
+    'metric': {
+        'name': 'val_accuracy',
+        'goal': 'maximize'
+    },
+    'parameters': {
+		
+		'batch_size': {
+			'values': [1,32,1000]
+        },
+
+        'learning_rate': {
+            'values': [0.01,0.1,0.05,0.5]
+        },
+        'activation_function': {
+            'values': ['relu', 'sigmoid', 'tanh']
+        },
+        'optimizer': {
+            'values': ['sgd']
+        },
+        'neurons_per_layer': {
+            'values': [[64], [64, 32], [64, 32, 16]]
+        }
+    }
+}
+
+
 
 
 df = pd.read_csv('./../../data/external/WineQT.csv')
@@ -43,7 +73,7 @@ Y_validation = Y[int(0.8*len(Y)):int(0.9*len(Y))]
 X_test = X[int(0.9*len(X)):]
 Y_test = Y[int(0.9*len(Y)):]
 
-mlp = MLP(n_epochs=1000, n_hidden=3, neurons_per_layer=[64,32], activation_function='sigmoid', loss_function='mean_squared_error', optimizer='sgd', batch_size=32)
+mlp = MLP(n_epochs=1000, n_hidden=2, neurons_per_layer=[64,32], activation_function='sigmoid', loss_function='mean_squared_error', optimizer='sgd', batch_size=32)
 
 Y_train = Y_train
 mlp.fit(X_train, Y_train)
@@ -55,5 +85,17 @@ print('y_test:', Y_test)
 scores = Scores(Y_test, Y_pred)
 print("Accuracy: ", scores.accuracy)
 
+def train_sweep(config=None):
+    with wandb.init(config=config):
+        config = wandb.config
+        mlp = MLP(n_epochs=1000,
+                  n_hidden=3,
+                  learning_rate=config.learning_rate, 
+                  neurons_per_layer=config.neurons_per_layer, 
+                  activation_function=config.activation_function, 
+                  optimizer=config.optimizer,
+                  batch_size=config.batch_size)
+        mlp.fit(X_train, Y_train, X_validation, Y_validation)
 
-mlp.gradient_check(X_train, Y_train)
+sweep_id = wandb.sweep(sweep_config, project='mlp-classifier-sweep-2')
+wandb.agent(sweep_id, train_sweep)
