@@ -23,7 +23,7 @@ class MLPR:
         self.X = X
         self.Y = Y
         self.n_samples, self.n_features = X.shape
-        self.n_outputs = 1  # Since it's regression, we predict a single continuous output.
+        self.n_outputs = 1
 
         self.weights = self.initialize_weights()
         self.biases = self.initialize_biases()
@@ -37,6 +37,11 @@ class MLPR:
                 self.forward_propagation(X_batch)
                 self.backward_propagation(Y_batch)
                 self.update_weights()
+
+            Y_train_pred = self.predict(X)
+            train_loss = self.compute_loss(Y_train_pred, Y)
+
+            print(f'Epoch {epoch+1}/{self.n_epochs}, loss: {train_loss}')
 
             if X_val is not None and Y_val is not None:
                 Y_val_pred = self.predict(X_val)

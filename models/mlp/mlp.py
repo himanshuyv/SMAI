@@ -1,49 +1,56 @@
 import numpy as np
 import wandb
 from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score
+from sklearn.preprocessing import OneHotEncoder
 
 class MLP:
-    def __init__(self, learning_rate=0.01, n_epochs=1000, n_hidden=2, batch_size=32, neurons_per_layer=None,
-                 activation_function='sigmoid', loss_function='cross_entropy', optimizer='sgd', early_stopping=False):
+    def __init__(self, learning_rate=0.01, n_epochs=200, batch_size=32, neurons_per_layer=None,
+                 activation_function='sigmoid', loss_function='mean_squared_error', optimizer='sgd', early_stopping=False):
         self.learning_rate = learning_rate
         self.n_epochs = n_epochs
-        self.n_hidden = n_hidden
-        self.batch_size = batch_size
-        self.neurons_per_layer = neurons_per_layer if neurons_per_layer else [10] * n_hidden
+        self.neurons_per_layer = neurons_per_layer
         self.activation_function = activation_function
         self.loss_function = loss_function
         self.optimizer = optimizer
         self.early_stopping = early_stopping
-        self.best_weights = None
-        self.best_biases = None
-        self.best_loss = float('inf')
-        self.patience = 10
+        if (optimizer == 'mini_batch'):
+            self.batch_size = batch_size
+        elif (optimizer == 'sgd'):
+            self.batch_size = 1
+        else:
+            self.batch_size = batch_size
+        self.one_hot_encoder = OneHotEncoder(sparse_output=False)
 
     def fit(self, X, Y, X_val=None, Y_val=None):
         self.X = X
         self.Y = Y
         self.n_samples, self.n_features = X.shape
-        self.n_classes = np.max(Y) + 1
-
+        self.n_classes = len(np.unique(Y)) if len(np.unique(Y)) > 2 else 1
         self.weights = self.initialize_weights()
         self.biases = self.initialize_biases()
 
-        stop_counter = 0
+        if self.n_classes > 1:
+            Y = self.one_hot_encoder.fit_transform(Y.reshape(-1, 1))
+
         for epoch in range(self.n_epochs):
             for i in range(0, self.n_samples, self.batch_size):
                 X_batch = X[i:i+self.batch_size]
                 Y_batch = Y[i:i+self.batch_size]
-                Y_batch_one_hot = self.one_hot_encode(Y_batch) if self.n_classes > 1 else Y_batch.reshape(-1, 1)
+                
+                if self.n_classes > 1:
+                    Y_batch_one_hot = Y_batch
+                else:
+                    Y_batch_one_hot = Y_batch.reshape(-1, 1)
+
                 self.forward_propagation(X_batch)
                 self.backward_propagation(Y_batch_one_hot)
                 self.update_weights()
 
-            if (X_val is not None and Y_val is not None):
+            if X_val is not None and Y_val is not None:
                 Y_val_pred = self.predict(X_val)
                 Y_train_pred = self.predict(X)
                 val_loss = self.compute_loss(Y_val_pred, Y_val)
                 train_loss = self.compute_loss(Y_train_pred, Y)
-
                 score_train = self.compute_metrics(Y_train_pred, Y)
                 score_val = self.compute_metrics(Y_val_pred, Y_val)
 
@@ -79,14 +86,21 @@ class MLP:
         self.activations[0] = X
         for i in range(1, len(self.weights) + 1):
             z = np.dot(self.activations[i - 1], self.weights[i - 1]) + self.biases[i]
-            if i == len(self.weights):  # Apply softmax in the final layer
-                self.activations[i] = self.softmax(z)
+            if i == len(self.weights): 
+                if self.n_classes == 1:
+                    self.activations[i] = self.sigmoid(z)
+                else:
+                    self.activations[i] = self.softmax(z)
             else:
                 self.activations[i] = self.activation(z)
 
+    def sigmoid(self, x):
+        x = np.clip(x, -500, 500)
+        return 1 / (1 + np.exp(-x))
+
     def activation(self, x):
         if self.activation_function == 'sigmoid':
-            return 1 / (1 + np.exp(-x))
+            return self.sigmoid(x)
         elif self.activation_function == 'relu':
             return np.maximum(0, x)
         elif self.activation_function == 'tanh':
@@ -100,7 +114,8 @@ class MLP:
 
     def activation_derivative(self, x):
         if self.activation_function == 'sigmoid':
-            return x * (1 - x)
+            z = self.sigmoid(x)
+            return z * (1 - z)
         elif self.activation_function == 'relu':
             return 1. * (x > 0)
         elif self.activation_function == 'tanh':
@@ -116,23 +131,19 @@ class MLP:
 
     def update_weights(self):
         for i in range(len(self.weights)):
-            if self.optimizer == 'sgd':
-                self.weights[i] += self.learning_rate * np.dot(self.activations[i].T, self.errors[i + 1])
-                self.biases[i + 1] += self.learning_rate * np.sum(self.errors[i + 1], axis=0)
-            elif self.optimizer == 'mini_batch':
-                pass
+            self.weights[i] += self.learning_rate * np.dot(self.activations[i].T, self.errors[i + 1])
+            self.biases[i + 1] += self.learning_rate * np.sum(self.errors[i + 1], axis=0)
 
     def compute_loss(self, Y_pred, Y_true):
-        print(Y_pred)
-        print(Y_true)
         if self.loss_function == 'cross_entropy':
             if self.n_classes > 1:
-                Y_true_one_hot = self.one_hot_encode(Y_true)
-                return -np.mean(np.sum(Y_true_one_hot * np.log(Y_pred + 1e-8), axis=1))
+                return -np.mean(np.sum(Y_true * np.log(Y_pred + 1e-8), axis=1))
             else:
+                Y_true = Y_true.reshape(-1, 1)
                 return -np.mean(Y_true * np.log(Y_pred + 1e-8) + (1 - Y_true) * np.log(1 - Y_pred + 1e-8))
         elif self.loss_function == 'mean_squared_error':
             return np.mean((Y_true - Y_pred) ** 2)
+
 
     def compute_metrics(self, Y_pred, Y_true):
         metrics = {
@@ -147,11 +158,8 @@ class MLP:
         self.forward_propagation(X)
         output = self.activations[len(self.weights)]
         if self.n_classes > 1:
-            return np.argmax(output, axis=1)
+            predicted_classes = np.argmax(output, axis=1)
+            return self.one_hot_encoder.inverse_transform(np.eye(self.n_classes)[predicted_classes].reshape(-1, self.n_classes))
         elif self.n_classes == 1:
             return (output >= 0.5).astype(int)
 
-    def one_hot_encode(self, Y):
-        one_hot = np.zeros((Y.size, self.n_classes))
-        one_hot[np.arange(Y.size), Y] = 1
-        return one_hot

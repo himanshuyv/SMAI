@@ -1,7 +1,7 @@
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
-from sklearn.preprocessing import StandardScaler
+from sklearn.preprocessing import StandardScaler, MinMaxScaler
 from sklearn.preprocessing import MultiLabelBinarizer
 import wandb
 
@@ -11,6 +11,7 @@ sys.path.append('./../../')
 from models.mlp.mlp import MLP
 from models.mlp_multilabel.mlp import MLP_multilabel
 from models.mlp_regression.regression import MLPR
+from models.autoencoder.autoencoder import AutoEncoder
 
 
 
@@ -50,16 +51,16 @@ def MLP_sigleLabel(train_sweep=False):
     X_test = X[int(0.9*len(X)):]
     Y_test = Y[int(0.9*len(Y)):]
 
-    mlp = MLP(n_epochs=1000, n_hidden=2, neurons_per_layer=[64,32], activation_function='sigmoid', loss_function='mean_squared_error', optimizer='sgd', batch_size=32, learning_rate=0.01)
+    mlp = MLP(n_epochs=1000, neurons_per_layer=[64,32], activation_function='sigmoid', loss_function='mean_squared_error', optimizer='mini-batch', batch_size=32, learning_rate=0.01)
 
     Y_train = Y_train
     mlp.fit(X_train, Y_train)
     Y_pred = mlp.predict(X_test)
     metrics = mlp.compute_metrics(Y_test, Y_pred)
     print("Accuracy: ", metrics['accuracy'])
-    print("Precision: ", metrics['precision'])
-    print("Recall: ", metrics['recall'])
-    print("F1: ", metrics['f1'])
+    # print("Precision: ", metrics['precision'])
+    # print("Recall: ", metrics['recall'])
+    # print("F1: ", metrics['f1'])
     loss = mlp.compute_loss(Y_pred, Y_test)
     print("Loss: ", loss)
     
@@ -94,8 +95,7 @@ def MLP_sigleLabel(train_sweep=False):
         def train_sweep(config=None):
             with wandb.init(config=config):
                 config = wandb.config
-                mlp = MLP(n_epochs=1000,
-                          n_hidden=3,
+                mlp = MLP(n_epochs=200,
                           learning_rate=config.learning_rate, 
                           neurons_per_layer=config.neurons_per_layer, 
                           activation_function=config.activation_function, 
@@ -103,9 +103,8 @@ def MLP_sigleLabel(train_sweep=False):
                           batch_size=config.batch_size)
                 mlp.fit(X_train, Y_train, X_validation, Y_validation)
 
-        sweep_id = wandb.sweep(sweep_config, project='mlp-classifier-sweep-2')
+        sweep_id = wandb.sweep(sweep_config, project='mlp-classifier-sweep-3')
         wandb.agent(sweep_id, train_sweep)
-
 
 def MLP_multiLabel():
     df = pd.read_csv('./../../data/external/advertisement.csv')
@@ -157,13 +156,16 @@ def MLP_multiLabel():
 def MLP_regression():
     df = pd.read_csv('./../../data/external/HousingData.csv')
     df = df.dropna()
-
     X = df.drop(columns=['MEDV'])
     Y = df['MEDV']
+    standard_scaler = StandardScaler()
+    X_standardized = pd.DataFrame(standard_scaler.fit_transform(X), columns=X.columns)
+    min_max_scaler = MinMaxScaler()
+    X_normalized = pd.DataFrame(min_max_scaler.fit_transform(X_standardized), columns=X.columns)
 
-    X = X.to_numpy()
+    X = X_normalized.to_numpy()
     Y = Y.to_numpy()
-
+ 
     X_train = X[:int(0.8*len(X))]
     Y_train = Y[:int(0.8*len(Y))]
     X_validation = X[int(0.8*len(X)):int(0.9*len(X))]
@@ -171,13 +173,42 @@ def MLP_regression():
     X_test = X[int(0.9*len(X)):]
     Y_test = Y[int(0.9*len(Y)):]
 
-    mlp_reg = MLPR(learning_rate=0.01, n_epochs=500, n_hidden=3, neurons_per_layer=[64, 32, 16], activation_function='relu', optimizer='sgd')
+    mlp_reg = MLPR(learning_rate=0.001, n_epochs=500, n_hidden=3, neurons_per_layer=[64, 32, 16], activation_function='relu', optimizer='sgd')
     mlp_reg.fit(X_train, Y_train)
 
     Y_pred = mlp_reg.predict(X_test)
     loss = mlp_reg.compute_loss(Y_pred, Y_test)
     print("Loss: ", loss)
 
-# MLP_sigleLabel(train_sweep=False)
+def auto_encoder():
+    df = pd.read_csv("./../../data/external/spotify.csv")
+    df = df.drop(columns=['Unnamed: 0'])
+    df = df.drop_duplicates(subset='track_id', keep="first")
+
+    df = df.sample(frac=1).reset_index(drop=True)
+    df_numerical = df.select_dtypes(include=['number'])
+
+    def normalize(df):
+        return (df - df.min()) / (df.max() - df.min())
+    df_numerical = normalize(df_numerical)
+
+    X = df_numerical
+    Y = df['track_genre']
+
+    autoencoder = AutoEncoder(input_dim=X.shape[1], latent_dim=8, hidden_layers=[64, 32], activation='relu', optimizer='sgd', epochs=100, learning_rate=0.01, batch_size=32)
+    autoencoder.fit(X)
+
+    latent_rep = autoencoder.get_latent(X)
+    reconstructed_X = autoencoder.reconstruct(X)
+
+    print("Latent Representation: ", latent_rep)
+    print("Reconstructed X: ", reconstructed_X)
+
+
+
+
+
+MLP_sigleLabel(train_sweep=False)
 # MLP_multiLabel()
-MLP_regression()
+# MLP_regression()
+# auto_encoder()
