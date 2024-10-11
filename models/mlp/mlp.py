@@ -5,7 +5,7 @@ from sklearn.preprocessing import OneHotEncoder
 
 class MLP:
     def __init__(self, learning_rate=0.01, n_epochs=200, batch_size=32, neurons_per_layer=None,
-                 activation_function='sigmoid', loss_function='mean_squared_error', optimizer='sgd', early_stopping=False):
+                 activation_function='sigmoid', loss_function='mean_squared_error', optimizer='sgd', early_stopping=False, patience=10, gradient_check=False):
         self.learning_rate = learning_rate
         self.n_epochs = n_epochs
         self.neurons_per_layer = neurons_per_layer
@@ -13,6 +13,8 @@ class MLP:
         self.loss_function = loss_function
         self.optimizer = optimizer
         self.early_stopping = early_stopping
+        self.patience = patience
+        self.gradient_check = gradient_check
         if (optimizer == 'mini_batch'):
             self.batch_size = batch_size
         elif (optimizer == 'sgd'):
@@ -32,6 +34,9 @@ class MLP:
 
         if self.n_classes > 1:
             Y = self.one_hot_encoder.fit_transform(Y.reshape(-1, 1))
+
+        best_loss = np.inf
+        patience_counter = 0
 
         for epoch in range(self.n_epochs):
             for i in range(0, self.n_samples, self.batch_size):
@@ -68,6 +73,19 @@ class MLP:
                     'val_f1': score_val['f1']
                 })
 
+                if self.early_stopping:
+                    if val_loss < best_loss:
+                        best_loss = val_loss
+                        patience_counter = 0
+                    else:
+                        patience_counter += 1
+
+                    if patience_counter >= self.patience:
+                        print(f"Early stopping at epoch {epoch+1}")
+                        break
+
+            if self.gradient_check:
+                self.check_gradients()
 
     def initialize_weights(self):
         weights = {}
@@ -150,8 +168,6 @@ class MLP:
         elif self.loss_function == 'mean_squared_error':
             return np.mean((Y_true - Y_pred) ** 2)
 
-
-
     def compute_metrics(self, Y_pred, Y_true):
         if self.n_classes > 1:
             if len(Y_true.shape) > 1 and Y_true.shape[1] > 1:
@@ -166,7 +182,6 @@ class MLP:
         }
         return metrics
 
-
     def predict(self, X):
         self.forward_propagation(X)
         output = self.activations[len(self.weights)]
@@ -175,3 +190,24 @@ class MLP:
             return self.one_hot_encoder.inverse_transform(np.eye(self.n_classes)[predicted_classes].reshape(-1, self.n_classes))
         elif self.n_classes == 1:
             return (output >= 0.5).astype(int)
+
+    def check_gradients(self, epsilon=1e-7):
+        print("Performing gradient checking...")
+        for i in range(len(self.weights)):
+            for w_idx in np.ndindex(self.weights[i].shape):
+                original_weight = self.weights[i][w_idx]
+                self.weights[i][w_idx] += epsilon
+                plus_loss = self.compute_loss(self.predict(self.X), self.Y)
+                self.weights[i][w_idx] -= 2 * epsilon
+                minus_loss = self.compute_loss(self.predict(self.X), self.Y)
+                self.weights[i][w_idx] = original_weight
+
+                numerical_gradient = (plus_loss - minus_loss) / (2 * epsilon)
+                backprop_gradient = np.dot(self.activations[i].T, self.errors[i + 1])[w_idx]
+
+                if not np.isclose(numerical_gradient, backprop_gradient, atol=1e-5):
+                    print(f"Gradient check failed at layer {i}, weight {w_idx}.")
+                    print(f"Numerical: {numerical_gradient}, Backprop: {backprop_gradient}")
+                    return False
+        print("Gradient check passed!")
+        return True

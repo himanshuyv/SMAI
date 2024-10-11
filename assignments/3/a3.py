@@ -17,7 +17,7 @@ from models.autoencoder.autoencoder import AutoEncoder
 
 
 
-def MLP_sigleLabel(train_sweep=False):
+def MLP_singleLabel(train_sweep=False):
     df = pd.read_csv('./../../data/external/WineQT.csv')
     df = df.drop(columns=['Id'])
     print(df.shape)
@@ -54,7 +54,7 @@ def MLP_sigleLabel(train_sweep=False):
     mlp = MLP(n_epochs=1000, neurons_per_layer=[64,32], activation_function='sigmoid', optimizer='mini-batch', batch_size=32, learning_rate=0.01)
 
     Y_train = Y_train
-    mlp.fit(X_train, Y_train)
+    mlp.fit(X_train, Y_train, X_validation, Y_validation)
     Y_pred = mlp.predict(X_test)
     metrics = mlp.compute_metrics(Y_test, Y_pred)
     print("Accuracy: ", metrics['accuracy'])
@@ -134,15 +134,13 @@ def MLP_multiLabel():
     X_std = X.std()
     X = (X - X_mean) / X_std
     Y = Y.to_numpy()
-    print('Y:',Y)
     X_train = X[:int(0.8*len(X))]
     Y_train = Y[:int(0.8*len(Y))]
     X_validation = X[int(0.8*len(X)):int(0.9*len(X))]
     Y_validation = Y[int(0.8*len(Y)):int(0.9*len(Y))]
     X_test = X[int(0.9*len(X)):]
     Y_test = Y[int(0.9*len(Y)):]
-    print('Y_train:',Y_train)
-    mlp = MLP_multilabel(n_epochs=100, n_hidden=2, neurons_per_layer=[48,16], activation_function='sigmoid', optimizer='sgd', batch_size=32, learning_rate=0.5)
+    mlp = MLP_multilabel(n_epochs=1000, neurons_per_layer=[48,16], activation_function='sigmoid', optimizer='mini-batch', batch_size=32, learning_rate=0.5)
     mlp.fit(X_train, Y_train)
     Y_pred = mlp.predict(X_test)
     metrics = mlp.compute_metrics(Y_pred, Y_test)
@@ -207,7 +205,7 @@ def auto_encoder():
 
 
 
-MLP_sigleLabel(train_sweep=True)
+MLP_singleLabel(train_sweep=False)
 # MLP_multiLabel()
 # MLP_regression()
 # auto_encoder()
