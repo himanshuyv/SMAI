@@ -11,7 +11,7 @@ sys.path.append('./../../')
 from models.mlp.mlp import MLP
 from models.mlp_multilabel.mlp import MLP_multilabel
 from models.mlp_regression.regression import MLPR
-# from models.autoencoder.autoencoder import AutoEncoder
+from models.autoencoder.autoencoder import AutoEncoder
 
 
 
@@ -140,7 +140,7 @@ def MLP_multiLabel():
     Y_validation = Y[int(0.8*len(Y)):int(0.9*len(Y))]
     X_test = X[int(0.9*len(X)):]
     Y_test = Y[int(0.9*len(Y)):]
-    mlp = MLP_multilabel(n_epochs=1000, neurons_per_layer=[48,16], activation_function='sigmoid', optimizer='mini-batch', batch_size=32, learning_rate=0.5)
+    mlp = MLP_multilabel(n_epochs=1000, neurons_per_layer=[64,16], activation_function='relu', optimizer='mini-batch', batch_size=32, learning_rate=3)
     mlp.fit(X_train, Y_train)
     Y_pred = mlp.predict(X_test)
     metrics = mlp.compute_metrics(Y_pred, Y_test)
@@ -185,37 +185,37 @@ def MLP_regression():
     print(f"Mean Squared Error on Test Set: {mse:.4f}")
 
 def auto_encoder():
-    pass
-    # df = pd.read_csv("./../../data/external/spotify.csv")
-    # df = df.drop(columns=['Unnamed: 0'])
-    # df = df.drop_duplicates(subset='track_id', keep="first")
+    # pass
+    df = pd.read_csv("./../../data/external/spotify.csv")
+    df = df.drop(columns=['Unnamed: 0'])
+    df = df.drop_duplicates(subset='track_id', keep="first")
 
-    # df = df.sample(frac=1).reset_index(drop=True)
-    # df_numerical = df.select_dtypes(include=['number'])
+    df = df.sample(frac=1).reset_index(drop=True)
+    df_numerical = df.select_dtypes(include=['number'])
 
-    # def normalize(df):
-    #     return (df - df.min()) / (df.max() - df.min())
-    # df_numerical = normalize(df_numerical)
+    def normalize(df):
+        return (df - df.min()) / (df.max() - df.min())
+    df_numerical = normalize(df_numerical)
 
-    # X = df_numerical
-    # Y = df['track_genre']
+    X = df_numerical
+    Y = df['track_genre']
 
-    # X = X.to_numpy()
+    X = X.to_numpy()
 
-    # autoencoder = AutoEncoder(input_dim=X.shape[1], latent_dim=8, hidden_layers=[64, 32], activation='relu', optimizer='sgd', epochs=100, learning_rate=0.01, batch_size=32)
-    # autoencoder.fit(X)
+    autoencoder = AutoEncoder(input_dim=X.shape[1], latent_dim=8, hidden_layers=[64, 32], activation='relu', optimizer='sgd', epochs=100, learning_rate=0.01, batch_size=32)
+    autoencoder.fit(X)
 
-    # latent_rep = autoencoder.get_latent(X)
-    # reconstructed_X = autoencoder.reconstruct(X)
+    latent_rep = autoencoder.get_latent(X)
+    reconstructed_X = autoencoder.reconstruct(X)
 
-    # print("Latent Representation: ", latent_rep)
-    # print("Reconstructed X: ", reconstructed_X)
+    print("Latent Representation: ", latent_rep)
+    print("Reconstructed X: ", reconstructed_X)
 
 
 
 
 
 # MLP_singleLabel(train_sweep=False)
-# MLP_multiLabel()
-MLP_regression()
+MLP_multiLabel()
+# MLP_regression()
 # auto_encoder()

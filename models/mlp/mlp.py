@@ -139,7 +139,7 @@ class MLP:
         elif self.activation_function == 'relu':
             return 1. * (x > 0)
         elif self.activation_function == 'tanh':
-            return 1 - x ** 2
+            return 1 - np.tanh(x) ** 2
         elif self.activation_function == 'linear':
             return 1
 
