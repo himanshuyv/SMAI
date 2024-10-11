@@ -18,7 +18,6 @@ class AutoEncoder:
         self.encoder = MLP(
             learning_rate=learning_rate, 
             n_epochs=epochs, 
-            n_hidden=len(hidden_layers), 
             neurons_per_layer=hidden_layers + [latent_dim], 
             activation_function=activation, 
             loss_function='mean_squared_error',
@@ -27,7 +26,6 @@ class AutoEncoder:
         self.decoder = MLP(
             learning_rate=learning_rate, 
             n_epochs=epochs, 
-            n_hidden=len(hidden_layers), 
             neurons_per_layer=[latent_dim] + list(reversed(hidden_layers)) + [input_dim], 
             activation_function=activation, 
             loss_function='mean_squared_error',

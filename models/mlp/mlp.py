@@ -190,24 +190,3 @@ class MLP:
             return self.one_hot_encoder.inverse_transform(np.eye(self.n_classes)[predicted_classes].reshape(-1, self.n_classes))
         elif self.n_classes == 1:
             return (output >= 0.5).astype(int)
-
-    def check_gradients(self, epsilon=1e-7):
-        print("Performing gradient checking...")
-        for i in range(len(self.weights)):
-            for w_idx in np.ndindex(self.weights[i].shape):
-                original_weight = self.weights[i][w_idx]
-                self.weights[i][w_idx] += epsilon
-                plus_loss = self.compute_loss(self.predict(self.X), self.Y)
-                self.weights[i][w_idx] -= 2 * epsilon
-                minus_loss = self.compute_loss(self.predict(self.X), self.Y)
-                self.weights[i][w_idx] = original_weight
-
-                numerical_gradient = (plus_loss - minus_loss) / (2 * epsilon)
-                backprop_gradient = np.dot(self.activations[i].T, self.errors[i + 1])[w_idx]
-
-                if not np.isclose(numerical_gradient, backprop_gradient, atol=1e-5):
-                    print(f"Gradient check failed at layer {i}, weight {w_idx}.")
-                    print(f"Numerical: {numerical_gradient}, Backprop: {backprop_gradient}")
-                    return False
-        print("Gradient check passed!")
-        return True
