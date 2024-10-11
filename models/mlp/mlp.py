@@ -26,6 +26,7 @@ class MLP:
         self.Y = Y
         self.n_samples, self.n_features = X.shape
         self.n_classes = len(np.unique(Y)) if len(np.unique(Y)) > 2 else 1
+
         self.weights = self.initialize_weights()
         self.biases = self.initialize_biases()
 
@@ -36,7 +37,7 @@ class MLP:
             for i in range(0, self.n_samples, self.batch_size):
                 X_batch = X[i:i+self.batch_size]
                 Y_batch = Y[i:i+self.batch_size]
-                
+
                 if self.n_classes > 1:
                     Y_batch_one_hot = Y_batch
                 else:
@@ -48,10 +49,10 @@ class MLP:
 
             if X_val is not None and Y_val is not None:
                 Y_val_pred = self.predict(X_val)
-                Y_train_pred = self.predict(X)
+                Y_train_pred = self.predict(self.X)
                 val_loss = self.compute_loss(Y_val_pred, Y_val)
-                train_loss = self.compute_loss(Y_train_pred, Y)
-                score_train = self.compute_metrics(Y_train_pred, Y)
+                train_loss = self.compute_loss(Y_train_pred, self.Y)
+                score_train = self.compute_metrics(Y_train_pred, self.Y)
                 score_val = self.compute_metrics(Y_val_pred, Y_val)
 
                 wandb.log({
@@ -66,6 +67,7 @@ class MLP:
                     'train_f1': score_train['f1'],
                     'val_f1': score_val['f1']
                 })
+
 
     def initialize_weights(self):
         weights = {}
@@ -135,24 +137,35 @@ class MLP:
             self.biases[i + 1] += self.learning_rate * np.sum(self.errors[i + 1], axis=0)
 
     def compute_loss(self, Y_pred, Y_true):
+        if self.n_classes > 1 and len(Y_true.shape) == 1:
+            Y_true = self.one_hot_encoder.transform(Y_true.reshape(-1, 1))
+
         if self.loss_function == 'cross_entropy':
             if self.n_classes > 1:
                 return -np.mean(np.sum(Y_true * np.log(Y_pred + 1e-8), axis=1))
             else:
                 Y_true = Y_true.reshape(-1, 1)
                 return -np.mean(Y_true * np.log(Y_pred + 1e-8) + (1 - Y_true) * np.log(1 - Y_pred + 1e-8))
+
         elif self.loss_function == 'mean_squared_error':
             return np.mean((Y_true - Y_pred) ** 2)
 
 
+
     def compute_metrics(self, Y_pred, Y_true):
+        if self.n_classes > 1:
+            if len(Y_true.shape) > 1 and Y_true.shape[1] > 1:
+                Y_true = np.argmax(Y_true, axis=1)
+            if len(Y_pred.shape) > 1 and Y_pred.shape[1] > 1:
+                Y_pred = np.argmax(Y_pred, axis=1)
         metrics = {
             'accuracy': accuracy_score(Y_true, Y_pred),
-            'precision': precision_score(Y_true, Y_pred, average='macro'),
-            'recall': recall_score(Y_true, Y_pred, average='macro'),
-            'f1': f1_score(Y_true, Y_pred, average='macro')
+            'precision': precision_score(Y_true, Y_pred, average='macro', zero_division=0),
+            'recall': recall_score(Y_true, Y_pred, average='macro', zero_division=0),
+            'f1': f1_score(Y_true, Y_pred, average='macro', zero_division=0)
         }
         return metrics
+
 
     def predict(self, X):
         self.forward_propagation(X)
@@ -162,4 +175,3 @@ class MLP:
             return self.one_hot_encoder.inverse_transform(np.eye(self.n_classes)[predicted_classes].reshape(-1, self.n_classes))
         elif self.n_classes == 1:
             return (output >= 0.5).astype(int)
-

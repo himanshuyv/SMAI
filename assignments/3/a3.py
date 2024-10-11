@@ -51,16 +51,16 @@ def MLP_sigleLabel(train_sweep=False):
     X_test = X[int(0.9*len(X)):]
     Y_test = Y[int(0.9*len(Y)):]
 
-    mlp = MLP(n_epochs=1000, neurons_per_layer=[64,32], activation_function='sigmoid', loss_function='mean_squared_error', optimizer='mini-batch', batch_size=32, learning_rate=0.01)
+    mlp = MLP(n_epochs=1000, neurons_per_layer=[64,32], activation_function='sigmoid', optimizer='mini-batch', batch_size=32, learning_rate=0.01)
 
     Y_train = Y_train
     mlp.fit(X_train, Y_train)
     Y_pred = mlp.predict(X_test)
     metrics = mlp.compute_metrics(Y_test, Y_pred)
     print("Accuracy: ", metrics['accuracy'])
-    # print("Precision: ", metrics['precision'])
-    # print("Recall: ", metrics['recall'])
-    # print("F1: ", metrics['f1'])
+    print("Precision: ", metrics['precision'])
+    print("Recall: ", metrics['recall'])
+    print("F1: ", metrics['f1'])
     loss = mlp.compute_loss(Y_pred, Y_test)
     print("Loss: ", loss)
     
@@ -72,19 +72,18 @@ def MLP_sigleLabel(train_sweep=False):
                 'goal': 'maximize'
             },
             'parameters': {
-                
                 'batch_size': {
-                    'values': [1,32,1000]
+                    'values': [64]
                 },
 
                 'learning_rate': {
-                    'values': [0.01,0.1,0.05,0.5]
+                    'values': [0.01,0.05,0.1]
                 },
                 'activation_function': {
                     'values': ['relu', 'sigmoid', 'tanh']
                 },
                 'optimizer': {
-                    'values': ['sgd']
+                    'values': ['sgd', 'mini-batch', 'batch']
                 },
                 'neurons_per_layer': {
                     'values': [[64], [64, 32], [64, 32, 16]]
@@ -95,7 +94,7 @@ def MLP_sigleLabel(train_sweep=False):
         def train_sweep(config=None):
             with wandb.init(config=config):
                 config = wandb.config
-                mlp = MLP(n_epochs=200,
+                mlp = MLP(n_epochs=1000,
                           learning_rate=config.learning_rate, 
                           neurons_per_layer=config.neurons_per_layer, 
                           activation_function=config.activation_function, 
@@ -208,7 +207,7 @@ def auto_encoder():
 
 
 
-MLP_sigleLabel(train_sweep=False)
+MLP_sigleLabel(train_sweep=True)
 # MLP_multiLabel()
 # MLP_regression()
 # auto_encoder()
