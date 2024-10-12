@@ -12,6 +12,7 @@ from models.mlp.mlp import MLP
 from models.mlp_multilabel.MLP_multilabel import MLP_multilabel
 from models.mlp_regression.regression import MLPR
 from models.autoencoder.autoencoder import AutoEncoder
+from models.knn.knn import KNN
 
 
 
@@ -252,8 +253,33 @@ def MLP_regression(train_sweep=False):
         sweep_id = wandb.sweep(sweep_config, project='mlp-regression')
         wandb.agent(sweep_id, train_sweep)
 
+def LogisticRegression():
+    df = pd.read_csv('./../../data/external/diabetes.csv')
+    df = df.dropna()
+    X = df.drop(columns=['Outcome'])
+    Y = df['Outcome']
+    X = X.to_numpy()
+    Y = Y.to_numpy()
+
+    X = (X - X.mean()) / X.std()
+
+    m_mse = MLPR(learning_rate=0.01, n_epochs=1000, batch_size=32, neurons_per_layer=[64, 32], activation_function='relu', optimizer='mini-batch', loss_function='mean_squared_error')
+    m_mse.fit(X, Y)
+    mse_loss_list = m_mse.loss_list
+
+    m_bce = MLPR(learning_rate=0.01, n_epochs=1000, batch_size=32, neurons_per_layer=[64, 32], activation_function='relu', optimizer='mini-batch', loss_function='binary_cross_entropy')
+    m_bce.fit(X, Y)
+    bce_loss_list = m_bce.loss_list
+
+    plt.plot(mse_loss_list, label='Mean Squared Error')
+    plt.plot(bce_loss_list, label='Binary Cross Entropy')
+    plt.legend()
+    plt.xlabel('Epochs')
+    plt.ylabel('Loss')
+    plt.title('Loss vs Epochs')
+    plt.savefig('./figures/logistic_regression.png')
+
 def auto_encoder():
-    # pass
     df = pd.read_csv("./../../data/external/spotify.csv")
     df = df.drop(columns=['Unnamed: 0'])
     df = df.drop_duplicates(subset='track_id', keep="first")
@@ -269,21 +295,71 @@ def auto_encoder():
     Y = df['track_genre']
 
     X = X.to_numpy()
+    Y = Y.to_numpy()
 
-    autoencoder = AutoEncoder(input_dim=X.shape[1], latent_dim=8, hidden_layers=[64, 32], activation='relu', optimizer='sgd', epochs=100, learning_rate=0.01, batch_size=32)
-    autoencoder.fit(X)
+    X_train = X[:int(0.8*len(X))]
+    Y_train = Y[:int(0.8*len(Y))]
+    X_validation = X[int(0.8*len(X)):int(0.9*len(X))]
+    Y_validation = Y[int(0.8*len(Y)):int(0.9*len(Y))]
+    X_test = X[int(0.9*len(X)):]    
+    Y_test = Y[int(0.9*len(Y)):]
 
-    latent_rep = autoencoder.get_latent(X)
-    reconstructed_X = autoencoder.reconstruct(X)
+    autoencoder = AutoEncoder(input_dim=X.shape[1], latent_dim=8, neurons_per_layer=[64, 32], activation_function='relu', optimizer='sgd', n_epochs=100, learning_rate=0.01, batch_size=32)
+    autoencoder.fit(X_train)
 
-    print("Latent Representation: ", latent_rep)
-    print("Reconstructed X: ", reconstructed_X)
+    X_train_reduced = autoencoder.get_latent(X_train)
+    X_validation_reduced = autoencoder.get_latent(X_validation)
+    print(X_train_reduced.shape)
+    print(X_validation_reduced.shape)
+
+    knn = KNN(k=20)
+    knn.fit(X_train_reduced, Y_train)
+    Y_pred = knn.predict(X_validation_reduced, 'cosine')
+    accuracy = np.mean(Y_pred == Y_validation)
+    print("Accuracy KNN: ", accuracy)
+
+    mlp = MLP(n_epochs=100, neurons_per_layer=[64, 32], activation_function='relu', optimizer='mini-batch', batch_size=32, learning_rate=0.05)
+    mlp.fit(X_train_reduced, Y_train)
+    Y_pred = mlp.predict(X_validation_reduced)
+    accuracy = np.mean(Y_pred == Y_validation)
+    print("Accuracy MLP: ", accuracy)
 
 
+def MLP_spotify():
+    df = pd.read_csv("./../../data/external/spotify.csv")
+    df = df.drop(columns=['Unnamed: 0'])
+    df = df.drop_duplicates(subset='track_id', keep="first")
+
+    df = df.sample(frac=1).reset_index(drop=True)
+    df_numerical = df.select_dtypes(include=['number'])
+
+    def normalize(df):
+        return (df - df.min()) / (df.max() - df.min())
+    df_numerical = normalize(df_numerical)
+
+    X = df_numerical
+    Y = df['track_genre']
+
+    X = X.to_numpy()
+    Y = Y.to_numpy()
+
+    X_train = X[:int(0.8*len(X))]
+    Y_train = Y[:int(0.8*len(Y))]
+    X_validation = X[int(0.8*len(X)):int(0.9*len(X))]
+    Y_validation = Y[int(0.8*len(Y)):int(0.9*len(Y))]
+    X_test = X[int(0.9*len(X)):]    
+    Y_test = Y[int(0.9*len(Y)):]
+
+    mlp = MLP(n_epochs=1000, neurons_per_layer=[64, 32], activation_function='relu', optimizer='mini-batch', batch_size=32, learning_rate=0.05)
+    mlp.fit(X_train, Y_train)
+    Y_pred = mlp.predict(X_validation)
+    accuracy = np.mean(Y_pred == Y_validation)
+    print("Accuracy: ", accuracy)
 
 
-
-MLP_singleLabel(train_sweep=True)
+# MLP_singleLabel(train_sweep=False)
 # MLP_multiLabel()
-# MLP_regression(train_sweep=True)
-# auto_encoder()
+# MLP_regression(train_sweep=False)
+# LogisticRegression()
+auto_encoder()
+# MLP_spotify()

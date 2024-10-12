@@ -36,7 +36,7 @@ class MLP:
             self.batch_size = self.n_samples
         self.weights, self.biases = self.initialize_weightsAndBiases()
 
-        if self.n_classes > 1:
+        if self.n_classes > 1 and self.optimizer != "sgd":
             Y = self.one_hot_encoder.fit_transform(Y.reshape(-1, 1))
 
         best_loss = np.inf
@@ -229,8 +229,6 @@ class MLP:
                 loss_minus = self.compute_loss(X, Y)
                 self.biases[i][0, j] += epsilon
                 numerical_grads_b[i] = (loss_plus - loss_minus) / (2 * epsilon)
-
-        print(numerical_grads_b)
 
         for i in range(len(self.weights)):
             diff = np.linalg.norm(grads_w[i] - numerical_grads_w[i]) / (np.linalg.norm(grads_w[i]) + np.linalg.norm(numerical_grads_w[i]))

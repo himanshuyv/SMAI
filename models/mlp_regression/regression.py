@@ -18,7 +18,7 @@ class MLPR:
         self.X = X
         self.Y = Y
         self.n_samples, self.n_features = X.shape
-        self.n_classes = 1
+        self.n_classes = Y.shape[1] if len(Y.shape) > 1 else 1
 
         if self.optimizer == 'batch':
             self.batch_size = self.n_samples
@@ -27,17 +27,21 @@ class MLPR:
 
         best_loss = np.inf
         patience_counter = 0
-
+        self.loss_list = []
         for epoch in range(self.n_epochs):
             for i in range(0, self.n_samples, self.batch_size):
                 X_batch = X[i:i + self.batch_size]
                 Y_batch = Y[i:i + self.batch_size]
 
+                # print('batch_size:',self.batch_size)
+                # print('X_batch_shape:',X_batch.shape)
+                # print('Y_batch_shape:',Y_batch.shape)
                 self.forward_propagation(X_batch)
                 grads_w, grads_b = self.backward_propagation(Y_batch)
                 self.update_weights(grads_w, grads_b)
 
-            # loss = self.compute_loss(self.X, self.Y)
+            loss = self.compute_loss(self.X, self.Y)
+            self.loss_list.append(loss)
             # print(f"Epoch {epoch + 1}/{self.n_epochs} - Loss: {loss}")
 
             if X_val is not None and Y_val is not None:
@@ -87,7 +91,7 @@ class MLPR:
             self.activations[i] = self.activation(z)
 
     def activation(self, x):
-        if self.activation_function == 'sigmoid':
+        if self.activation_function == 'sigmoid' or self.loss_function == 'binary_crossentropy':
             return self.sigmoid(x)
         elif self.activation_function == 'relu':
             return np.maximum(0, x)
@@ -133,6 +137,10 @@ class MLPR:
             return np.mean((Y - Y_pred) ** 2)
         elif self.loss_function == 'mean_absolute_error':
             return np.mean(np.abs(Y - Y_pred))
+        elif self.loss_function == 'binary_cross_entropy':
+            epsilon = 1e-12
+            Y_pred = np.clip(Y_pred, epsilon, 1. - epsilon)
+            return -np.mean(Y * np.log(Y_pred) + (1 - Y) * np.log(1 - Y_pred))
         
     def mean_squared_error(self, Y_true, Y_pred):
         return np.mean((Y_true - Y_pred) ** 2)
