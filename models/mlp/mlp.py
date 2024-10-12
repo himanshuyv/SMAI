@@ -60,10 +60,10 @@ class MLP:
             print(f"Epoch {epoch+1}/{self.n_epochs} - Loss: {loss}")
 
             if X_val is not None and Y_val is not None:
+                val_loss = self.compute_loss(X_val, Y_val)
+                train_loss = self.compute_loss(self.X, self.Y)
                 Y_val_pred = self.predict(X_val)
                 Y_train_pred = self.predict(self.X)
-                val_loss = self.compute_loss(Y_val_pred, Y_val)
-                train_loss = self.compute_loss(Y_train_pred, self.Y)
                 score_train = self.compute_metrics(Y_train_pred, self.Y)
                 score_val = self.compute_metrics(Y_val_pred, Y_val)
 

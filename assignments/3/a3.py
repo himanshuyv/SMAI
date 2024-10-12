@@ -9,7 +9,7 @@ import sys
 sys.path.append('./../../')
 
 from models.mlp.mlp import MLP
-from models.mlp_multilabel.mlp import MLP_multilabel
+from models.mlp_multilabel.MLP_multilabel import MLP_multilabel
 from models.mlp_regression.regression import MLPR
 from models.autoencoder.autoencoder import AutoEncoder
 
@@ -108,32 +108,35 @@ def MLP_singleLabel(train_sweep=False):
 
 def MLP_multiLabel():
     df = pd.read_csv('./../../data/external/advertisement.csv')
-    def encode_data(advertisement):
+    def encode_y(advertisement):
         advertisement['labels'] = advertisement['labels'].str.split()
-        gender = pd.get_dummies(advertisement['gender'], prefix='gender')
-        advertisement = pd.concat([advertisement, gender], axis=1)
-        occupation = pd.get_dummies(advertisement['occupation'], prefix='occupation')
-        advertisement = pd.concat([advertisement, occupation], axis=1)
         binarizer = MultiLabelBinarizer()
         vecs = binarizer.fit_transform(advertisement['labels'])
-        binarized_df = pd.DataFrame(vecs, columns=binarizer.classes_)
-        advertisement = pd.concat([advertisement, binarized_df], axis=1)
-        advertisement.drop(['labels', 'most bought item', 'city', 'gender', 'occupation'], axis=1, inplace=True)
-        advertisement['married'] = advertisement['married'].apply(lambda x: 1 if x == True else 0)
-        advertisement['education'] = advertisement['education'].apply(lambda x: 1 if x == 'High School' else 2 if x == 'Bachelor' else 3 if x == 'Master' else 4)
-        return advertisement
-    df_encoded = encode_data(df)
-    # save the encoded data
-    df_encoded.to_csv('./../../data/interim/advertisement_encoded.csv', index=False)
+        Y = pd.DataFrame(vecs, columns=binarizer.classes_)
+        return Y
 
-    X = df_encoded.drop(columns=['beauty', 'books', 'clothing', 'electronics', 'food', 'furniture', 'home', 'sports'])
-    Y = df_encoded[['beauty', 'books', 'clothing', 'electronics', 'food', 'furniture', 'home', 'sports']]
+    def encode_x(advertisement):
+        df.drop(columns=['labels'], inplace=True)
+        df.drop(columns=['city'], inplace=True)
+        most_bought_item = list(advertisement['most bought item'].unique())
+        occupation = list(advertisement['occupation'].unique())
+        married = list(advertisement['married'].unique())
+        education = list(advertisement['education'].unique())
+        df['most bought item'] = df['most bought item'].map( lambda x: most_bought_item.index(x))
+        df['occupation'] = df['occupation'].map( lambda x: occupation.index(x))
+        df['married'] = df['married'].map( lambda x: married.index(x))
+        df['education'] = df['education'].map( lambda x: education.index(x))
+        df['gender'] = df['gender'].map( lambda x: 1 if x == 'MALE' else 0)
+        return df
+
+    Y = encode_y(df)
+    X = encode_x(df)
     X = X.to_numpy()
-    # X_min = X.min()
-    # X_max = X.max()
+    X = X.astype(np.float64)
     X_mean = X.mean()
     X_std = X.std()
     X = (X - X_mean) / X_std
+    # print(X)
     Y = Y.to_numpy()
     X_train = X[:int(0.8*len(X))]
     Y_train = Y[:int(0.8*len(Y))]
@@ -141,10 +144,10 @@ def MLP_multiLabel():
     Y_validation = Y[int(0.8*len(Y)):int(0.9*len(Y))]
     X_test = X[int(0.9*len(X)):]
     Y_test = Y[int(0.9*len(Y)):]
-    mlp = MLP_multilabel(n_epochs=1000, neurons_per_layer=[64,16], activation_function='relu', optimizer='mini-batch', batch_size=32, learning_rate=3)
+    mlp = MLP_multilabel(n_epochs=1000, neurons_per_layer=[48, 16], activation_function='tanh', optimizer='mini-batch', batch_size=16, learning_rate=0.05)
     mlp.fit(X_train, Y_train)
-    Y_pred = mlp.predict(X_test)
-    metrics = mlp.compute_metrics(Y_pred, Y_test)
+    Y_pred = mlp.predict(X_train)
+    metrics = mlp.compute_metrics(Y_pred, Y_train)
     
     print("Accuracy: ", metrics['accuracy'])
     print("Precision: ", metrics['precision'])
@@ -274,7 +277,7 @@ def auto_encoder():
 
 
 
-MLP_singleLabel(train_sweep=False)
-# MLP_multiLabel()
+# MLP_singleLabel(train_sweep=False)
+MLP_multiLabel()
 # MLP_regression(train_sweep=True)
 # auto_encoder()
