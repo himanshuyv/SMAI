@@ -51,8 +51,7 @@ def MLP_singleLabel(train_sweep=False):
     X_test = X[int(0.9*len(X)):]
     Y_test = Y[int(0.9*len(Y)):]
 
-    mlp = MLP(n_epochs=1000, neurons_per_layer=[64,32], activation_function='sigmoid', optimizer='mini-batch', batch_size=32, learning_rate=0.01)
-
+    mlp = MLP(n_epochs=1000, neurons_per_layer=[64,32], activation_function='relu', optimizer='mini-batch', batch_size=32, learning_rate=0.05)
 
     Y_train = Y_train
     mlp.fit(X_train, Y_train)
@@ -62,11 +61,10 @@ def MLP_singleLabel(train_sweep=False):
     print("Precision: ", metrics['precision'])
     print("Recall: ", metrics['recall'])
     print("F1: ", metrics['f1'])
-    loss = mlp.compute_loss(Y_pred, Y_test)
-    print("Loss: ", loss)
+    print("Loss: ", mlp.compute_loss(X, Y))
 
     mlp.gradient_check(X_train, Y_train)
-    
+
     if train_sweep:
         sweep_config = {
             'method': 'grid',
