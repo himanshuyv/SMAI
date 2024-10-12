@@ -3,9 +3,14 @@ import wandb
 from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score
 from sklearn.preprocessing import OneHotEncoder
 
+import numpy as np
+import wandb
+from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score
+from sklearn.preprocessing import OneHotEncoder
+
 class MLP:
     def __init__(self, learning_rate=0.01, n_epochs=200, batch_size=32, neurons_per_layer=None,
-                 activation_function='sigmoid', loss_function='mean_squared_error', optimizer='sgd', early_stopping=False, patience=10, gradient_check=False):
+                 activation_function='sigmoid', loss_function='mean_squared_error', optimizer='sgd', early_stopping=False, patience=10):
         self.learning_rate = learning_rate
         self.n_epochs = n_epochs
         self.neurons_per_layer = neurons_per_layer
@@ -14,13 +19,11 @@ class MLP:
         self.optimizer = optimizer
         self.early_stopping = early_stopping
         self.patience = patience
-        self.gradient_check = gradient_check
-        if (optimizer == 'mini_batch'):
+        if optimizer == 'mini-batch':
             self.batch_size = batch_size
-        elif (optimizer == 'sgd'):
-            self.batch_size = 1
-        else:
-            self.batch_size = batch_size
+        elif optimizer == 'sgd':
+            self.batch_size = 1``
+
         self.one_hot_encoder = OneHotEncoder(sparse_output=False)
 
     def fit(self, X, Y, X_val=None, Y_val=None):
@@ -29,6 +32,8 @@ class MLP:
         self.n_samples, self.n_features = X.shape
         self.n_classes = len(np.unique(Y)) if len(np.unique(Y)) > 2 else 1
 
+        if self.optimizer == 'batch':
+            self.batch_size = self.n_samples
         self.weights = self.initialize_weights()
         self.biases = self.initialize_biases()
 
@@ -49,8 +54,8 @@ class MLP:
                     Y_batch_one_hot = Y_batch.reshape(-1, 1)
 
                 self.forward_propagation(X_batch)
-                self.backward_propagation(Y_batch_one_hot)
-                self.update_weights()
+                grads_w, grads_b = self.backward_propagation(Y_batch_one_hot)
+                self.update_weights(grads_w, grads_b)
 
             if X_val is not None and Y_val is not None:
                 Y_val_pred = self.predict(X_val)
@@ -83,9 +88,6 @@ class MLP:
                     if patience_counter >= self.patience:
                         print(f"Early stopping at epoch {epoch+1}")
                         break
-
-            if self.gradient_check:
-                self.check_gradients()
 
     def initialize_weights(self):
         weights = {}
@@ -134,25 +136,34 @@ class MLP:
 
     def activation_derivative(self, x):
         if self.activation_function == 'sigmoid':
-            z = self.sigmoid(x)
-            return z * (1 - z)
+            return x * (1 - x)
         elif self.activation_function == 'relu':
             return 1. * (x > 0)
         elif self.activation_function == 'tanh':
-            return 1 - np.tanh(x) ** 2
+            return 1 - x ** 2
         elif self.activation_function == 'linear':
             return 1
 
     def backward_propagation(self, Y):
         self.errors = {}
-        self.errors[len(self.weights)] = Y - self.activations[len(self.weights)]
-        for i in range(len(self.weights) - 1, 0, -1):
-            self.errors[i] = np.dot(self.errors[i + 1], self.weights[i].T) * self.activation_derivative(self.activations[i])
+        self.errors[len(self.weights)] = self.activations[len(self.weights)] - Y
+        
+        grads_w = {}
+        grads_b = {}
 
-    def update_weights(self):
+        for i in range(len(self.weights), 0, -1):
+            grads_w[i - 1] = np.dot(self.activations[i - 1].T, self.errors[i])  
+            grads_b[i] = np.sum(self.errors[i], axis=0, keepdims=True)
+            if i > 1:
+                self.errors[i - 1] = np.dot(self.errors[i], self.weights[i - 1].T) * self.activation_derivative(self.activations[i - 1])
+        return grads_w, grads_b
+
+
+    def update_weights(self, grads_w, grads_b):
         for i in range(len(self.weights)):
-            self.weights[i] += self.learning_rate * np.dot(self.activations[i].T, self.errors[i + 1])
-            self.biases[i + 1] += self.learning_rate * np.sum(self.errors[i + 1], axis=0)
+            self.weights[i] -= self.learning_rate * grads_w[i]
+            self.biases[i + 1] -= self.learning_rate * grads_b[i + 1].reshape(-1)
+
 
     def compute_loss(self, Y_pred, Y_true):
         if self.n_classes > 1 and len(Y_true.shape) == 1:
@@ -190,3 +201,62 @@ class MLP:
             return self.one_hot_encoder.inverse_transform(np.eye(self.n_classes)[predicted_classes].reshape(-1, self.n_classes))
         elif self.n_classes == 1:
             return (output >= 0.5).astype(int)
+
+    def predict_proba(self, X):
+        self.forward_propagation(X)
+        return self.activations[len(self.weights)]
+
+    def gradient_check(self, X, Y, epsilon=1e-7):
+        self.forward_propagation(X)
+        Y = self.one_hot_encoder.transform(Y.reshape(-1, 1))
+        grads_w, grads_b = self.backward_propagation(Y)
+        
+        numerical_grads_w = {}
+        numerical_grads_b = {}
+
+        for l in range(len(self.weights)):
+            numerical_grads_w[l] = np.zeros_like(self.weights[l])
+            for i in range(self.weights[l].shape[0]):
+                for j in range(self.weights[l].shape[1]):
+                    original_weight = self.weights[l][i, j]
+                    self.weights[l][i, j] = original_weight + epsilon
+                    self.forward_propagation(X)
+                    loss_plus_epsilon = self.compute_loss(self.activations[len(self.weights)], Y)
+                    self.weights[l][i, j] = original_weight - epsilon
+                    self.forward_propagation(X)
+                    loss_minus_epsilon = self.compute_loss(self.activations[len(self.weights)], Y)
+                    self.weights[l][i, j] = original_weight
+                    numerical_grads_w[l][i, j] = (loss_plus_epsilon - loss_minus_epsilon) / (2 * epsilon)
+
+            relative_difference_w = np.linalg.norm(grads_w[l] - numerical_grads_w[l]) / (
+                np.linalg.norm(grads_w[l]) + np.linalg.norm(numerical_grads_w[l]) + 1e-8
+            )
+            if relative_difference_w > 1e-6:
+                print(f"Gradient check failed for weights in layer {l + 1}: relative difference is {relative_difference_w}")
+                return False
+
+        for l in range(1, len(self.biases) + 1):
+            numerical_grads_b[l] = np.zeros_like(self.biases[l])
+            
+            for i in range(len(self.biases[l])):
+                original_bias = self.biases[l][i]
+                self.biases[l][i] = original_bias + epsilon
+                self.forward_propagation(X)
+                loss_plus_epsilon = self.compute_loss(self.activations[len(self.weights)], Y)
+                
+                self.biases[l][i] = original_bias - epsilon
+                self.forward_propagation(X)
+                loss_minus_epsilon = self.compute_loss(self.activations[len(self.weights)], Y)
+                self.biases[l][i] = original_bias
+                
+                numerical_grads_b[l][i] = (loss_plus_epsilon - loss_minus_epsilon) / (2 * epsilon)
+
+            relative_difference_b = np.linalg.norm(grads_b[l] - numerical_grads_b[l]) / (
+                np.linalg.norm(grads_b[l]) + np.linalg.norm(numerical_grads_b[l]) + 1e-8
+            )
+            if relative_difference_b > 1e-6:
+                print(f"Gradient check failed for biases in layer {l}: relative difference is {relative_difference_b}")
+                return False
+
+        print("Gradient check passed!")
+        return True

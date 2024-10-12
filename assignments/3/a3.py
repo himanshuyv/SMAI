@@ -37,7 +37,7 @@ def MLP_singleLabel(train_sweep=False):
 
     X.hist()
     plt.tight_layout()
-    # plt.savefig('./../../figures/3/dataAnalysis2.png')
+    plt.savefig('./figures/dataAnalysis2.png')
 
     scaler = StandardScaler()
     X = scaler.fit_transform(X)
@@ -53,8 +53,9 @@ def MLP_singleLabel(train_sweep=False):
 
     mlp = MLP(n_epochs=1000, neurons_per_layer=[64,32], activation_function='sigmoid', optimizer='mini-batch', batch_size=32, learning_rate=0.01)
 
+
     Y_train = Y_train
-    mlp.fit(X_train, Y_train, X_validation, Y_validation)
+    mlp.fit(X_train, Y_train)
     Y_pred = mlp.predict(X_test)
     metrics = mlp.compute_metrics(Y_test, Y_pred)
     print("Accuracy: ", metrics['accuracy'])
@@ -63,6 +64,8 @@ def MLP_singleLabel(train_sweep=False):
     print("F1: ", metrics['f1'])
     loss = mlp.compute_loss(Y_pred, Y_test)
     print("Loss: ", loss)
+
+    mlp.gradient_check(X_train, Y_train)
     
     if train_sweep:
         sweep_config = {
@@ -150,9 +153,24 @@ def MLP_multiLabel():
     print("Recall: ", metrics['recall'])
     print("F1: ", metrics['f1'])
     
-def MLP_regression():
+def MLP_regression(train_sweep=False):
     df = pd.read_csv('./../../data/external/HousingData.csv')
     df = df.dropna()
+
+    df_mean = df.mean()
+    df_std = df.std()
+    df_min = df.min()
+    df_max = df.max()
+
+    print("\nMean: \n", df_mean)
+    print("\nStandard Deviation: \n", df_std)
+    print("\nMin: \n", df_min)
+    print("\nMax: \n", df_max)
+
+    df.hist()
+    plt.tight_layout()
+    plt.savefig('./figures/dataAnalysis3.png')
+
     X = df.drop(columns=['MEDV'])
     Y = df['MEDV']
     standard_scaler = StandardScaler()
@@ -179,10 +197,53 @@ def MLP_regression():
         optimizer='mini-batch'
     )
 
-    mlp_reg.fit(X_train, Y_train.reshape(-1, 1), X_val=X_validation, Y_val=Y_validation)
+    mlp_reg.fit(X_train, Y_train.reshape(-1, 1))
     Y_pred = mlp_reg.predict(X_test)
     mse = mlp_reg.compute_loss(Y_pred, Y_test)
     print(f"Mean Squared Error on Test Set: {mse:.4f}")
+
+    def train_sweep(config=None):
+        with wandb.init(config=config):
+            config = wandb.config
+            mlp_reg = MLPR(
+                learning_rate=config.learning_rate,
+                n_epochs=1000,
+                batch_size=config.batch_size,
+                neurons_per_layer=config.neurons_per_layer,
+                activation_function=config.activation_function,
+                optimizer=config.optimizer
+            )
+            mlp_reg.fit(X_train, Y_train.reshape(-1, 1), X_validation, Y_validation.reshape(-1, 1))
+
+    if train_sweep:
+        sweep_config = {
+            'method': 'grid',
+            'metric': {
+                'name': 'val_accuracy',
+                'goal': 'maximize'
+            },
+            'parameters': {
+                'batch_size': {
+                    'values': [64]
+                },
+
+                'learning_rate': {
+                    'values': [0.01,0.05,0.1]
+                },
+                'activation_function': {
+                    'values': ['relu', 'sigmoid', 'tanh']
+                },
+                'optimizer': {
+                    'values': ['sgd', 'mini-batch', 'batch']
+                },
+                'neurons_per_layer': {
+                    'values': [[64], [64, 32], [64, 32, 16]]
+                }
+            }
+        }
+
+        sweep_id = wandb.sweep(sweep_config, project='mlp-regression')
+        wandb.agent(sweep_id, train_sweep)
 
 def auto_encoder():
     # pass
@@ -215,7 +276,7 @@ def auto_encoder():
 
 
 
-# MLP_singleLabel(train_sweep=False)
-MLP_multiLabel()
-# MLP_regression()
+MLP_singleLabel(train_sweep=False)
+# MLP_multiLabel()
+# MLP_regression(train_sweep=True)
 # auto_encoder()

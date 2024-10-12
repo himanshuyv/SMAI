@@ -47,10 +47,10 @@ class MLPR:
                 val_loss = self.compute_loss(Y_val_pred, Y_val)
                 train_loss = self.compute_loss(Y_train_pred, self.Y)
 
-                # wandb.log({
-                #     'train_loss': train_loss,
-                #     'val_loss': val_loss
-                # })
+                wandb.log({
+                    'train_loss': train_loss,
+                    'val_loss': val_loss
+                })
 
                 if self.early_stopping:
                     if val_loss < best_loss:
@@ -86,7 +86,7 @@ class MLPR:
         for i in range(1, len(self.weights) + 1):
             z = np.dot(self.activations[i - 1], self.weights[i - 1]) + self.biases[i]
             if i == len(self.weights):
-                self.activations[i] = self.linear(z)  # Linear activation for regression output
+                self.activations[i] = self.linear(z)
             else:
                 self.activations[i] = self.activation(z)
 
@@ -129,12 +129,3 @@ class MLPR:
     def predict(self, X):
         self.forward_propagation(X)
         return self.activations[len(self.weights)]
-
-    def stochastic_gradient_descent(self):
-        self.optimizer = 'sgd'
-
-    def batch_gradient_descent(self):
-        self.optimizer = 'batch'
-
-    def mini_batch_gradient_descent(self):
-        self.optimizer = 'mini_batch'
