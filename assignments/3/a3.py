@@ -74,7 +74,7 @@ def MLP_singleLabel(train_sweep=False):
             },
             'parameters': {
                 'batch_size': {
-                    'values': [64]
+                    'values': [64, 32 ,16]
                 },
 
                 'learning_rate': {
@@ -181,6 +181,7 @@ def MLP_regression(train_sweep=False):
 
     X = X_normalized.to_numpy()
     Y = Y.to_numpy()
+    Y = Y.reshape(-1, 1)
  
     X_train = X[:int(0.8*len(X))]
     Y_train = Y[:int(0.8*len(Y))]
@@ -198,38 +199,30 @@ def MLP_regression(train_sweep=False):
         optimizer='mini-batch'
     )
 
-    mlp_reg.fit(X_train, Y_train.reshape(-1, 1))
-    Y_pred = mlp_reg.predict(X_test)
-    mse = mlp_reg.compute_loss(Y_pred, Y_test)
-    print(f"Mean Squared Error on Test Set: {mse:.4f}")
+    mlp_reg.fit(X_train, Y_train)
+    Y_pred = mlp_reg.predict(X_train)
+    metrics = mlp_reg.compute_metrics(Y_pred, Y_train)
+    print("Train Metrics: ")
+    print("MSE: ", metrics['mse'])
+    print("RMSE: ", metrics['rmse'])
+    print("MAE: ", metrics['mae'])
+    print("R2: ", metrics['r_squared'])
 
-    def train_sweep(config=None):
-        with wandb.init(config=config):
-            config = wandb.config
-            mlp_reg = MLPR(
-                learning_rate=config.learning_rate,
-                n_epochs=1000,
-                batch_size=config.batch_size,
-                neurons_per_layer=config.neurons_per_layer,
-                activation_function=config.activation_function,
-                optimizer=config.optimizer
-            )
-            mlp_reg.fit(X_train, Y_train.reshape(-1, 1), X_validation, Y_validation.reshape(-1, 1))
 
     if train_sweep:
         sweep_config = {
             'method': 'grid',
             'metric': {
-                'name': 'val_accuracy',
-                'goal': 'maximize'
+                'name': 'val_rmse',
+                'goal': 'minimize'
             },
             'parameters': {
                 'batch_size': {
-                    'values': [64]
+                    'values': [64, 32, 16]
                 },
 
                 'learning_rate': {
-                    'values': [0.01,0.05,0.1]
+                    'values': [0.001, 0.01,0.05,0.1]
                 },
                 'activation_function': {
                     'values': ['relu', 'sigmoid', 'tanh']
@@ -242,6 +235,19 @@ def MLP_regression(train_sweep=False):
                 }
             }
         }
+
+        def train_sweep(config=None):
+            with wandb.init(config=config):
+                config = wandb.config
+                mlp_reg = MLPR(
+                    learning_rate=config.learning_rate,
+                    n_epochs=1000,
+                    batch_size=config.batch_size,
+                    neurons_per_layer=config.neurons_per_layer,
+                    activation_function=config.activation_function,
+                    optimizer=config.optimizer
+                )
+                mlp_reg.fit(X_train, Y_train.reshape(-1, 1), X_validation, Y_validation.reshape(-1, 1))
 
         sweep_id = wandb.sweep(sweep_config, project='mlp-regression')
         wandb.agent(sweep_id, train_sweep)
@@ -277,7 +283,7 @@ def auto_encoder():
 
 
 
-# MLP_singleLabel(train_sweep=False)
-MLP_multiLabel()
+MLP_singleLabel(train_sweep=True)
+# MLP_multiLabel()
 # MLP_regression(train_sweep=True)
 # auto_encoder()

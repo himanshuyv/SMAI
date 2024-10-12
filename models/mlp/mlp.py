@@ -56,8 +56,8 @@ class MLP:
                 grads_w, grads_b = self.backward_propagation(Y_batch_one_hot)
                 self.update_weights(grads_w, grads_b)
             
-            loss = self.compute_loss(self.X, self.Y)
-            print(f"Epoch {epoch+1}/{self.n_epochs} - Loss: {loss}")
+            # loss = self.compute_loss(self.X, self.Y)
+            # print(f"Epoch {epoch+1}/{self.n_epochs} - Loss: {loss}")
 
             if X_val is not None and Y_val is not None:
                 val_loss = self.compute_loss(X_val, Y_val)
@@ -229,6 +229,8 @@ class MLP:
                 loss_minus = self.compute_loss(X, Y)
                 self.biases[i][0, j] += epsilon
                 numerical_grads_b[i] = (loss_plus - loss_minus) / (2 * epsilon)
+
+        print(numerical_grads_b)
 
         for i in range(len(self.weights)):
             diff = np.linalg.norm(grads_w[i] - numerical_grads_w[i]) / (np.linalg.norm(grads_w[i]) + np.linalg.norm(numerical_grads_w[i]))
