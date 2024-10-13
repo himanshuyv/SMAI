@@ -41,8 +41,8 @@ class MLP_multilabel:
                 grads_w, grads_b = self.backward_propagation(Y_batch)
                 self.update_weights(grads_w, grads_b)
             
-            loss = self.compute_loss(self.X, self.Y)
-            print(f"Epoch {epoch+1}/{self.n_epochs} - Loss: {loss}")
+            # loss = self.compute_loss(self.X, self.Y)
+            # print(f"Epoch {epoch+1}/{self.n_epochs} - Loss: {loss}")
 
             if X_val is not None and Y_val is not None:
                 val_loss = self.compute_loss(X_val, Y_val)

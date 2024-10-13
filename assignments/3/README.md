@@ -321,6 +321,15 @@ Loss:  1.101895309372894
 
 ### Task 5: Analyzing Hyperparameters Effects
 
+- Effect of Non Linearity <br>
+![nonlinearity](./figures/effect_activation_function.png)
+
+- Effect of Learning Rate <br>
+![learning_rate](./figures/effect_learning_rate.png)
+
+- Effect of Batch Size <br>
+![batch_size](./figures/effect_batch_size.png)
+
 ### Task 6: Multi-Label Classification
 Multi-Label Classification class.
 ```python
@@ -481,8 +490,27 @@ class MLP_multilabel:
         return (cur_pred >= threshold).astype(int)
 ```
 
+On performing the multilabel classification given dataset follwing result obtained.
+```
+Hamming loss:  0.35125
+Accuracy:  0.01323
+Precision:  0.02380
+Recall:  0.01176
+F1:  0.01574  
+```
+Most of the time the model was giving almost zero accuracy. The results depends on the different runs.
 
 ### Task 7: Analysis
+
+On making the frequency map for each labels the following results were obtained:
+
+```
+Correct Predictions:  {5: 35, 6: 21}
+Incorrect Predictions:  {6: 26, 8: 2, 7: 13, 5: 12, 4: 3, 3: 3}
+```
+From the above map we can see that the class 5 has the highest correct predictions followed by the class 6. This is because in the data the class 5 and 6 have the highest frequency hence the model is trained well for these classes.
+Note: The above map also varies with different runs.
+
 
 ## Multilayer Perceptron Regression
 
@@ -823,6 +851,13 @@ R2:  -1.846738375000255
 ### Task 5: Mean Squared Error vs Binary Cross Entropy
 ![regression](./figures/logistic_regression.png)
 
+![mse](./figures/mse_loss.png)
+
+![bce](./figures/bce_loss.png)
+
+From above plots we can see that BCE conveges faster that the MSE.
+This is because BCE directly penalizes the incorrect prbablities and hence the model learns faster.
+
 ### Task 6: Analysis
 
 ### Task 7: Bonus
@@ -1140,13 +1175,13 @@ class AutoEncoder:
 - Performance for Reduced dataset using AutoEncoder for latent_dim = 8
 
 ``` 
-Accuracy:  0.18597136330714803
-Micro Precision:  0.18612690978030558
-Micro Recall:  0.18612690978030558
-Micro F1:  0.18612690978030558
-Macro Precision:  0.1746170934914126
-Macro Recall:  0.18315556368879207
-Macro F1:  0.1696364645256168
+Accuracy:  0.21744944008022732
+Micro Precision:  0.217667726284089
+Micro Recall:  0.217667726284089
+Micro F1:  0.217667726284089
+Macro Precision:  0.19998930536851317
+Macro Recall:  0.2035806933508997
+Macro F1:  0.19374885413204795
 ```
 - Keeping all the features, with best k = 20 and best distance metric = 'manhattan', the scores are as follows:
 ```
@@ -1163,23 +1198,24 @@ Macro F1: 0.24091608277387128
 
 - Keeping the best 8 features, with best k = 20 and best distance metric = 'manhattan', the scores are as follows:
 ```
-Reduced Dataset
-Accuracy:  0.18597136330714803
-Micro Precision:  0.18612690978030558
-Micro Recall:  0.18612690978030558
-Micro F1:  0.18612690978030558
-Macro Precision:  0.1746170934914126
-Macro Recall:  0.18315556368879207
-Macro F1:  0.1696364645256168
+Accuracy: 0.21232380634018608
+Micro Precision: 0.21232380634018608
+Micro Recall: 0.21232380634018608
+Micro F1: 0.21232380634018608
+Macro Precision: 0.2023337961950314
+Macro Recall: 0.19550068347367766
+Macro F1: 0.1896011645793315
 ```
 
 
 - MLP
 ```
 Performance for Reduced dataset using AutoEncoder
-Accuracy:  0.20708674577970917
-Precision:  0.18921976558977252
-Recall:  0.20708674577970917
-F1:  0.17586781184101258
-Loss:  3.2011893951802244
+Accuracy:  0.24096049919215556
+Precision:  0.22147008250410197
+Recall:  0.24096049919215556
+F1:  0.21242616690063498
+Loss:  2.98001393206514
 ```
+
+

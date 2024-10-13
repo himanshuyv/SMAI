@@ -4,6 +4,7 @@ import matplotlib.pyplot as plt
 from sklearn.preprocessing import StandardScaler, MinMaxScaler
 from sklearn.preprocessing import MultiLabelBinarizer
 from sklearn.preprocessing import OneHotEncoder
+from sklearn.metrics import hamming_loss
 import wandb
 
 import sys
@@ -36,6 +37,7 @@ def MLP_singleLabel(train_sweep=False):
     X = df.drop(columns=['quality'])
     Y = df['quality']
 
+    figure = plt.figure()
     X.hist()
     plt.tight_layout()
     plt.savefig('./figures/dataAnalysis2.png')
@@ -77,6 +79,91 @@ def MLP_singleLabel(train_sweep=False):
     print("Recall: ", metrics['recall'])
     print("F1: ", metrics['f1'])
     print("Loss: ", mlp.compute_loss(X_test, Y_test_one_hot))
+
+    print("Y_pred: ", Y_pred_label.reshape(-1))
+    print("Y_test: ", Y_test)
+
+    # Analysis
+    freq_map_correct = {}
+    freq_map_incorrect = {}
+    for i in range(len(Y_test)):
+        temp = int(Y_test[i])
+        if (temp == Y_pred_label[i]):
+            if temp in freq_map_correct:
+                freq_map_correct[temp] += 1
+            else:
+                freq_map_correct[temp] = 1
+        else:
+            if temp in freq_map_incorrect:
+                freq_map_incorrect[temp] += 1
+            else:
+                freq_map_incorrect[temp] = 1
+
+    print("Correct Predictions: ", freq_map_correct)
+    print("Incorrect Predictions: ", freq_map_incorrect)
+
+    # Effect of non-linearity
+    mlp_relu = MLP_merged(n_epochs=1000, neurons_per_layer=[64,32], activation_function='relu', optimizer='batch', batch_size=128, learning_rate=0.005)
+    mlp_sigmoid = MLP_merged(n_epochs=1000, neurons_per_layer=[64,32], activation_function='sigmoid', optimizer='batch', batch_size=128, learning_rate=0.005)
+    mlp_tanh = MLP_merged(n_epochs=1000, neurons_per_layer=[64,32], activation_function='tanh', optimizer='batch', batch_size=128, learning_rate=0.005)
+    mlp_linear = MLP_merged(n_epochs=1000, neurons_per_layer=[64,32], activation_function='linear', optimizer='batch', batch_size=128, learning_rate=0.005)
+
+    mlp_relu.fit(X_train, Y_train_one_hot)
+    mlp_sigmoid.fit(X_train, Y_train_one_hot)
+    mlp_tanh.fit(X_train, Y_train_one_hot)
+    mlp_linear.fit(X_train, Y_train_one_hot)
+
+    loss_relu = mlp_relu.loss_list
+    loss_sigmoid = mlp_sigmoid.loss_list
+    loss_tanh = mlp_tanh.loss_list
+    loss_linear = mlp_linear.loss_list
+    
+    plt.figure()
+    plt.plot(loss_relu, label='ReLU')
+    plt.plot(loss_sigmoid, label='Sigmoid')
+    plt.plot(loss_tanh, label='Tanh')
+    plt.plot(loss_linear, label='Linear')
+    plt.legend()
+    plt.xlabel('Epochs')
+    plt.ylabel('Loss')
+    plt.title('Effect of Activation Function')
+    plt.savefig('./figures/effect_activation_function.png')
+
+    # Effect of learning rate
+    learning_rates = [0.001, 0.005, 0.01, 0.1]
+    loss_list = []
+    for lr in learning_rates:
+        mlp = MLP_merged(n_epochs=1000, neurons_per_layer=[64,32], activation_function='relu', optimizer='batch', batch_size=128, learning_rate=lr)
+        mlp.fit(X_train, Y_train_one_hot)
+        loss_list.append(mlp.loss_list)
+    
+    plt.figure()
+    for i in range(len(learning_rates)):
+        plt.plot(loss_list[i], label='Learning Rate: ' + str(learning_rates[i]))
+    plt.legend()
+    plt.xlabel('Epochs')
+    plt.ylabel('Loss')
+    plt.title('Effect of Learning Rate')
+    plt.savefig('./figures/effect_learning_rate.png')
+
+
+    # Effect of batch size 
+    batch_sizes = [16, 32, 64, 128]
+    loss_list = []
+
+    for bs in batch_sizes:
+        mlp = MLP_merged(n_epochs=1000, neurons_per_layer=[64,32], activation_function='relu', optimizer='mini-batch', batch_size=bs, learning_rate=0.005)
+        mlp.fit(X_train, Y_train_one_hot)
+        loss_list.append(mlp.loss_list)
+
+    plt.figure()
+    for i in range(len(batch_sizes)):
+        plt.plot(loss_list[i], label='Batch Size: ' + str(batch_sizes[i]))
+    plt.legend()
+    plt.xlabel('Epochs')
+    plt.ylabel('Loss')
+    plt.title('Effect of Batch Size')
+    plt.savefig('./figures/effect_batch_size.png')    
 
     if train_sweep:
         sweep_config = {
@@ -150,6 +237,8 @@ def MLP_multiLabel():
     X_mean = X.mean()
     X_std = X.std()
     X = (X - X_mean) / X_std
+
+    # X = (X - X.min()) / (X.max() - X.min())
     # print(X)
     Y = Y.to_numpy()
     X_train = X[:int(0.8*len(X))]
@@ -158,12 +247,15 @@ def MLP_multiLabel():
     Y_validation = Y[int(0.8*len(Y)):int(0.9*len(Y))]
     X_test = X[int(0.9*len(X)):]
     Y_test = Y[int(0.9*len(Y)):]
-    mlp = MLP_multilabel(n_epochs=1000, neurons_per_layer=[64, 32], activation_function='tanh', optimizer='mini-batch', batch_size=16, learning_rate=0.1)
+    mlp = MLP_multilabel(n_epochs=1000, neurons_per_layer=[48, 16], activation_function='tanh', optimizer='mini-batch', batch_size=16, learning_rate=0.05)
     mlp.fit(X_train, Y_train)
     Y_pred = mlp.predict(X_test)
     accuracy = np.mean(Y_pred == Y_test)
     metrics = mlp.compute_metrics(Y_pred, Y_test)
-    print("Soft Accuracy: ", accuracy)
+    # print(Y_pred.shape)
+    # print(Y_test.shape)
+    hamming_loss_ = hamming_loss(Y_test, Y_pred)
+    print("Hamming loss: ", hamming_loss_)
     print("Accuracy: ", metrics['accuracy'])
     print("Precision: ", metrics['precision'])
     print("Recall: ", metrics['recall'])
@@ -274,14 +366,15 @@ def LogisticRegression():
 
     X = (X - X.mean()) / X.std()
 
-    m_mse = MLPR(learning_rate=0.01, n_epochs=1000, batch_size=32, neurons_per_layer=[64, 32], activation_function='relu', optimizer='mini-batch', loss_function='mean_squared_error')
+    m_mse = MLPR(learning_rate=0.05, n_epochs=1000, batch_size=32, neurons_per_layer=[64, 32], activation_function='relu', optimizer='mini-batch', loss_function='mean_squared_error')
     m_mse.fit(X, Y)
     mse_loss_list = m_mse.loss_list
 
-    m_bce = MLPR(learning_rate=0.01, n_epochs=1000, batch_size=32, neurons_per_layer=[64, 32], activation_function='relu', optimizer='mini-batch', loss_function='binary_cross_entropy')
+    m_bce = MLPR(learning_rate=0.05, n_epochs=1000, batch_size=32, neurons_per_layer=[64, 32], activation_function='relu', optimizer='mini-batch', loss_function='binary_cross_entropy')
     m_bce.fit(X, Y)
     bce_loss_list = m_bce.loss_list
 
+    plt.figure()
     plt.plot(mse_loss_list, label='Mean Squared Error')
     plt.plot(bce_loss_list, label='Binary Cross Entropy')
     plt.legend()
@@ -289,6 +382,20 @@ def LogisticRegression():
     plt.ylabel('Loss')
     plt.title('Loss vs Epochs')
     plt.savefig('./figures/logistic_regression.png')
+
+    plt.figure()
+    plt.plot(mse_loss_list, label='Mean Squared Error')
+    plt.xlabel('Epochs')
+    plt.ylabel('Loss')
+    plt.title('Mean Squared Error')
+    plt.savefig('./figures/mse_loss.png')
+
+    plt.figure()
+    plt.plot(bce_loss_list, label='Binary Cross Entropy')
+    plt.xlabel('Epochs')
+    plt.ylabel('Loss')
+    plt.title('Binary Cross Entropy')
+    plt.savefig('./figures/bce_loss.png')
 
 def auto_encoder():
     df = pd.read_csv("./../../data/external/spotify.csv")
@@ -339,21 +446,17 @@ def auto_encoder():
     print("Macro Recall: ", scores.macro_recall)
     print("Macro F1: ", scores.macro_f1)
 
-
-
-    
     mlp = MLP(n_epochs=500, neurons_per_layer=[48, 16], activation_function='tanh', optimizer='mini-batch', batch_size=32, learning_rate=0.01)
     mlp.fit(X_train_reduced, Y_train_one_hot)
     Y_pred_one_hot = mlp.predict(X_validation_reduced)
     Y_pred = one_hot_encoder.inverse_transform(Y_pred_one_hot)
-    scores = Scores(Y_pred, Y_validation)
-    print("Accuracy: ", scores.accuracy)
-    print("Micro Precision: ", scores.micro_precision)
-    print("Micro Recall: ", scores.micro_recall)
-    print("Micro F1: ", scores.micro_f1)
-    print("Macro Precision: ", scores.macro_precision)
-    print("Macro Recall: ", scores.macro_recall)
-    print("Macro F1: ", scores.macro_f1)
+    
+    metrics = mlp.compute_metrics(Y_pred, Y_validation)
+    print("Validation Metrics: ")
+    print("Accuracy: ", metrics['accuracy'])
+    print("Precision: ", metrics['precision'])
+    print("Recall: ", metrics['recall'])
+    print("F1: ", metrics['f1'])
     print("Loss: ", mlp.compute_loss(X_validation_reduced, Y_validation_one_hot))
 
 
