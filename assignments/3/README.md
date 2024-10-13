@@ -324,11 +324,18 @@ Loss:  1.101895309372894
 - Effect of Non Linearity <br>
 ![nonlinearity](./figures/effect_activation_function.png)
 
+Here although the sigmoid converged faster but the loss is higher.
+Most of the time relu and tanh are better than sigmoid (it depends on different runs).
+In this particular case tanh is better than relu.
+
 - Effect of Learning Rate <br>
 ![learning_rate](./figures/effect_learning_rate.png)
+With low learning rate the model converges slowly but with high learning rate the model converges faster but the loss is higher.
 
 - Effect of Batch Size <br>
 ![batch_size](./figures/effect_batch_size.png)
+
+Small batch size converges faster but the loss is higher. Large batch size converges slower but the loss is lower.
 
 ### Task 6: Multi-Label Classification
 Multi-Label Classification class.
@@ -860,6 +867,10 @@ This is because BCE directly penalizes the incorrect prbablities and hence the m
 
 ### Task 6: Analysis
 
+![scatter](./figures/mse_vs_ytest.png)
+
+Here from plot the plot we can see that the MSEs around 20 are less as the data around 20 is more(Except Outliers). The model is trained well for the data around 20.
+
 ### Task 7: Bonus
 
 Merged Class
@@ -1183,6 +1194,7 @@ Macro Precision:  0.19998930536851317
 Macro Recall:  0.2035806933508997
 Macro F1:  0.19374885413204795
 ```
+PCA
 - Keeping all the features, with best k = 20 and best distance metric = 'manhattan', the scores are as follows:
 ```
 
@@ -1206,7 +1218,9 @@ Macro Precision: 0.2023337961950314
 Macro Recall: 0.19550068347367766
 Macro F1: 0.1896011645793315
 ```
-
+Here the autoencoder results are close to the results of PCA. But this is very rare that autoencoder results are close to PCA results.
+Autoecoder results are heavily dependent on the different runs.
+Most of the time the autoencoder results are worse than PCA results.
 
 - MLP
 ```
@@ -1217,5 +1231,4 @@ Recall:  0.24096049919215556
 F1:  0.21242616690063498
 Loss:  2.98001393206514
 ```
-
-
+MLP Classifier does better that the KNN on the reduced dataset using AutoEncoder.

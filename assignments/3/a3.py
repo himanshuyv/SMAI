@@ -311,6 +311,19 @@ def MLP_regression(train_sweep=False):
     print("MAE: ", metrics['mae'])
     print("R2: ", metrics['r_squared'])
 
+    # Analysis
+    mse_loss_list = {}
+    for i in range(len(Y_test)):
+        mse_loss_list[i] = (Y_test[i] - Y_pred[i])**2
+
+    x = list(mse_loss_list.keys())
+    y = list(mse_loss_list.values())
+    plt.figure()
+    plt.scatter(x,y)
+    plt.xlabel('y_test')
+    plt.ylabel('MSE')
+    plt.savefig('./figures/mse_vs_ytest.png')
+
 
     if train_sweep:
         sweep_config = {
