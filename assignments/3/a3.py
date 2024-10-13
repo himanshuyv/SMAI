@@ -62,14 +62,15 @@ def MLP_singleLabel(train_sweep=False):
     Y_test_one_hot = Y_one_hot[int(0.9*len(Y_one_hot)):]
 
     # mlp = MLP(n_epochs=1000, neurons_per_layer=[64,32], activation_function='relu', optimizer='batch', batch_size=128, learning_rate=0.005)
-    mlp = MLP_merged(n_epochs=1000, neurons_per_layer=[64,32], activation_function='relu', optimizer='batch', batch_size=128, learning_rate=0.005)
+    mlp = MLP_merged(n_epochs=1000, neurons_per_layer=[64,32], activation_function='relu', optimizer='batch', loss_function='cross_entropy',batch_size=128, learning_rate=0.005)
     mlp.fit(X_train, Y_train_one_hot)
 
     mlp.gradient_check(X_train, Y_train_one_hot)
     
     Y_pred = mlp.predict(X_test)
     Y_pred_label = one_hot_encoder.inverse_transform(Y_pred)
-    metrics = mlp.compute_metrics(Y_pred_label, Y_test)
+    # metrics = mlp.compute_metrics(Y_pred_label, Y_test)
+    metrics = mlp.compute_metrics_classification(Y_pred_label, Y_test)
     print("Test Metrics: ")
     print("Accuracy: ", metrics['accuracy'])
     print("Precision: ", metrics['precision'])
@@ -205,12 +206,13 @@ def MLP_regression(train_sweep=False):
     Y_test = Y[int(0.9*len(Y)):]
 
     # mlp_reg = MLPR(learning_rate=0.001, n_epochs=1000, batch_size=16, neurons_per_layer=[64, 32, 16], activation_function='relu', optimizer='sgd')
-    mlp_reg = MLP_merged(learning_rate=0.001, n_epochs=1000, batch_size=16, neurons_per_layer=[64, 32, 16], activation_function='relu', optimizer='sgd', is_classification=False)
+    mlp_reg = MLP_merged(learning_rate=0.001, n_epochs=1000, batch_size=16, neurons_per_layer=[64, 32, 16], loss_function="mean_squared_error",activation_function='relu', optimizer='sgd', is_classification=False)
 
     mlp_reg.fit(X_train, Y_train)
     mlp_reg.gradient_check(X_train, Y_train)
     Y_pred = mlp_reg.predict(X_test)
-    metrics = mlp_reg.compute_metrics(Y_pred, Y_test)
+    # metrics = mlp_reg.compute_metrics(Y_pred, Y_test)
+    metrics = mlp_reg.compute_metrics_regression(Y_pred, Y_test)
     print("Test Metrics: ")
     print("MSE: ", metrics['mse'])
     print("RMSE: ", metrics['rmse'])
