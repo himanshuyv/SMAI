@@ -83,14 +83,14 @@ def MLP_singleLabel(train_sweep=False):
             },
             'parameters': {
                 'batch_size': {
-                    'values': [64, 32 ,16]
+                    'values': [128, 32]
                 },
 
                 'learning_rate': {
-                    'values': [0.01,0.05,0.1]
+                    'values': [0.001,0.005,0.01]
                 },
                 'activation_function': {
-                    'values': ['relu', 'sigmoid', 'tanh']
+                    'values': ['relu', 'sigmoid', 'tanh', 'linear']
                 },
                 'optimizer': {
                     'values': ['sgd', 'mini-batch', 'batch']
@@ -109,8 +109,9 @@ def MLP_singleLabel(train_sweep=False):
                           neurons_per_layer=config.neurons_per_layer, 
                           activation_function=config.activation_function, 
                           optimizer=config.optimizer,
-                          batch_size=config.batch_size)
-                mlp.fit(X_train, Y_train, X_validation, Y_validation)
+                          batch_size=config.batch_size,
+                          early_stopping=True)
+                mlp.fit(X_train, Y_train_one_hot, X_validation, Y_validation_one_hot)
 
         sweep_id = wandb.sweep(sweep_config, project='mlp-classifier-sweep-3')
         wandb.agent(sweep_id, train_sweep)
@@ -153,11 +154,12 @@ def MLP_multiLabel():
     Y_validation = Y[int(0.8*len(Y)):int(0.9*len(Y))]
     X_test = X[int(0.9*len(X)):]
     Y_test = Y[int(0.9*len(Y)):]
-    mlp = MLP_multilabel(n_epochs=1000, neurons_per_layer=[48, 16], activation_function='tanh', optimizer='mini-batch', batch_size=16, learning_rate=0.05)
+    mlp = MLP_multilabel(n_epochs=1000, neurons_per_layer=[64, 32], activation_function='tanh', optimizer='mini-batch', batch_size=16, learning_rate=0.1)
     mlp.fit(X_train, Y_train)
-    Y_pred = mlp.predict(X_train)
-    metrics = mlp.compute_metrics(Y_pred, Y_train)
-    
+    Y_pred = mlp.predict(X_test)
+    accuracy = np.mean(Y_pred == Y_test)
+    metrics = mlp.compute_metrics(Y_pred, Y_test)
+    print("Soft Accuracy: ", accuracy)
     print("Accuracy: ", metrics['accuracy'])
     print("Precision: ", metrics['precision'])
     print("Recall: ", metrics['recall'])
@@ -209,8 +211,8 @@ def MLP_regression(train_sweep=False):
     )
 
     mlp_reg.fit(X_train, Y_train)
-    Y_pred = mlp_reg.predict(X_train)
-    metrics = mlp_reg.compute_metrics(Y_pred, Y_train)
+    Y_pred = mlp_reg.predict(X_test)
+    metrics = mlp_reg.compute_metrics(Y_pred, Y_test)
     print("Train Metrics: ")
     print("MSE: ", metrics['mse'])
     print("RMSE: ", metrics['rmse'])
@@ -231,7 +233,7 @@ def MLP_regression(train_sweep=False):
                 },
 
                 'learning_rate': {
-                    'values': [0.001, 0.01,0.05,0.1]
+                    'values': [0.001, 0.01, 0.005]
                 },
                 'activation_function': {
                     'values': ['relu', 'sigmoid', 'tanh']
@@ -254,7 +256,8 @@ def MLP_regression(train_sweep=False):
                     batch_size=config.batch_size,
                     neurons_per_layer=config.neurons_per_layer,
                     activation_function=config.activation_function,
-                    optimizer=config.optimizer
+                    optimizer=config.optimizer,
+                    early_stopping=True
                 )
                 mlp_reg.fit(X_train, Y_train.reshape(-1, 1), X_validation, Y_validation.reshape(-1, 1))
 
@@ -267,7 +270,7 @@ def LogisticRegression():
     X = df.drop(columns=['Outcome'])
     Y = df['Outcome']
     X = X.to_numpy()
-    Y = Y.to_numpy()
+    Y = Y.to_numpy().reshape(-1, 1)
 
     X = (X - X.mean()) / X.std()
 
@@ -305,18 +308,20 @@ def auto_encoder():
     X = X.to_numpy()
     Y = Y.to_numpy()
 
-    Y_unique = np.unique(Y)
-    Y_map_encode = {y: i for i, y in enumerate(Y_unique)}
-    Y_map_decode = {i: y for i, y in enumerate(Y_unique)}
+    one_hot_encoder = OneHotEncoder(sparse_output=False)
+    Y_one_hot = one_hot_encoder.fit_transform(Y.reshape(-1, 1))
 
     X_train = X[:int(0.8*len(X))]
     Y_train = Y[:int(0.8*len(Y))]
+    Y_train_one_hot = Y_one_hot[:int(0.8*len(Y_one_hot))]
     X_validation = X[int(0.8*len(X)):int(0.9*len(X))]
     Y_validation = Y[int(0.8*len(Y)):int(0.9*len(Y))]
+    Y_validation_one_hot = Y_one_hot[int(0.8*len(Y_one_hot)):int(0.9*len(Y_one_hot))]
     X_test = X[int(0.9*len(X)):]    
     Y_test = Y[int(0.9*len(Y)):]
+    Y_test_one_hot = Y_one_hot[int(0.9*len(Y_one_hot)):]
 
-    autoencoder = AutoEncoder(input_dim=X.shape[1], latent_dim=8, neurons_per_layer=[64, 32], activation_function='relu', optimizer='sgd', n_epochs=100, learning_rate=0.01, batch_size=32)
+    autoencoder = AutoEncoder(input_dim=X.shape[1], latent_dim=12, neurons_per_layer=[64, 32], activation_function='relu', optimizer='sgd', n_epochs=200, learning_rate=0.01, batch_size=32)
     autoencoder.fit(X_train)
 
     X_train_reduced = autoencoder.get_latent(X_train)
@@ -330,49 +335,48 @@ def auto_encoder():
     accuracy = np.mean(Y_pred == Y_validation)
     print("Accuracy KNN: ", accuracy)
 
-    Y_train = np.array([Y_map_encode[y] for y in Y_train])
-    Y_validation = np.array([Y_map_encode[y] for y in Y_validation])
-    mlp = MLP(n_epochs=100, neurons_per_layer=[64, 32], activation_function='relu', optimizer='mini-batch', batch_size=32, learning_rate=0.05)
-    mlp.fit(X_train_reduced, Y_train)
-    Y_pred = mlp.predict(X_validation_reduced)
-    print(Y_pred)
+    
+    mlp = MLP(n_epochs=1000, neurons_per_layer=[48, 16], activation_function='tanh', optimizer='mini-batch', batch_size=32, learning_rate=0.01)
+    mlp.fit(X_train_reduced, Y_train_one_hot)
+    Y_pred_one_hot = mlp.predict(X_validation_reduced)
+    Y_pred = one_hot_encoder.inverse_transform(Y_pred_one_hot)
     accuracy = np.mean(Y_pred == Y_validation)
     print("Accuracy MLP: ", accuracy)
 
 
-MLP_singleLabel(train_sweep=False)
+# MLP_singleLabel(train_sweep=False)
 # MLP_multiLabel()
 # MLP_regression(train_sweep=False)
 # LogisticRegression()
 # auto_encoder()
 
-# while True:
-#     print("1. MLP Single Label")
-#     print("2. MLP Multi Label")
-#     print("3. MLP Regression")
-#     print("4. Logistic Regression")
-#     print("5. Auto Encoder")
-#     print("6. Exit")
-#     choice = int(input("Enter your choice: "))
-#     if choice == 1:
-#         sweep = input("Do you want to train sweep? (y/n): ")
-#         if sweep == 'y':
-#             MLP_singleLabel(train_sweep=True)
-#         else:
-#             MLP_singleLabel()
-#     elif choice == 2:
-#         MLP_multiLabel()
-#     elif choice == 3:
-#         sweep = input("Do you want to train sweep? (y/n): ")
-#         if sweep == 'y':
-#             MLP_regression(train_sweep=True)
-#         else:
-#             MLP_regression()
-#     elif choice == 4:
-#         LogisticRegression()
-#     elif choice == 5:
-#         auto_encoder()
-#     elif choice == 6:
-#         break
-#     else:
-#         print("Invalid Choice")
+while True:
+    print("1. MLP Single Label")
+    print("2. MLP Multi Label")
+    print("3. MLP Regression")
+    print("4. Logistic Regression")
+    print("5. Auto Encoder")
+    print("6. Exit")
+    choice = int(input("Enter your choice: "))
+    if choice == 1:
+        sweep = input("Do you want to train sweep? (y/n): ")
+        if sweep == 'y':
+            MLP_singleLabel(train_sweep=True)
+        else:
+            MLP_singleLabel()
+    elif choice == 2:
+        MLP_multiLabel()
+    elif choice == 3:
+        sweep = input("Do you want to train sweep? (y/n): ")
+        if sweep == 'y':
+            MLP_regression(train_sweep=True)
+        else:
+            MLP_regression()
+    elif choice == 4:
+        LogisticRegression()
+    elif choice == 5:
+        auto_encoder()
+    elif choice == 6:
+        break
+    else:
+        print("Invalid Choice")

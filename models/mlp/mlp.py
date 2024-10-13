@@ -4,7 +4,7 @@ from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_sc
 
 class MLP:
     def __init__(self, learning_rate=0.01, n_epochs=200, batch_size=32, neurons_per_layer=None,
-                 activation_function='sigmoid', loss_function='cross_entropy', optimizer='sgd', early_stopping=False, patience=10):
+                 activation_function='sigmoid', loss_function='cross_entropy', optimizer='sgd', early_stopping=False, patience=25):
         self.learning_rate = learning_rate
         self.n_epochs = n_epochs
         self.neurons_per_layer = neurons_per_layer
@@ -40,8 +40,8 @@ class MLP:
                 grads_w, grads_b = self.backward_propagation(Y_batch)
                 self.update_weights(grads_w, grads_b)
             
-            loss = self.compute_loss(self.X, self.Y)
-            print(f"Epoch {epoch+1}/{self.n_epochs} - Loss: {loss}")
+            # loss = self.compute_loss(self.X, self.Y)
+            # print(f"Epoch {epoch+1}/{self.n_epochs} - Loss: {loss}")
 
             if X_val is not None and Y_val is not None:
                 val_loss = self.compute_loss(X_val, Y_val)
@@ -80,7 +80,7 @@ class MLP:
         biases = {}
         layers = [self.n_features] + self.neurons_per_layer + [self.n_classes]
         for i in range(len(layers) - 1):
-            weights[i] = np.random.randn(layers[i], layers[i + 1]) * 0.01
+            weights[i] = np.random.randn(layers[i], layers[i + 1]) * (np.sqrt(2/layers[i]))
             biases[i] = np.zeros((1,layers[i+1]))
         return weights, biases
 

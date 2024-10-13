@@ -3,7 +3,7 @@ import wandb
 
 class MLPR:
     def __init__(self, learning_rate=0.01, n_epochs=200, batch_size=32, neurons_per_layer=None,
-                 activation_function='sigmoid', loss_function='mean_squared_error', optimizer='sgd', early_stopping=False, patience=10):
+                 activation_function='sigmoid', loss_function='mean_squared_error', optimizer='sgd', early_stopping=False, patience=30):
         self.learning_rate = learning_rate
         self.n_epochs = n_epochs
         self.batch_size = batch_size
@@ -86,44 +86,50 @@ class MLPR:
     def forward_propagation(self, X):
         self.activations = {}
         self.activations[0] = X
+        self.z = {}
         for i in range(1, len(self.weights) + 1):
             z = np.dot(self.activations[i - 1], self.weights[i - 1]) + self.biases[i - 1]
             self.activations[i] = self.activation(z)
-
-    def activation(self, x):
-        if self.activation_function == 'sigmoid' or self.loss_function == 'binary_crossentropy':
-            return self.sigmoid(x)
-        elif self.activation_function == 'relu':
-            return np.maximum(0, x)
-        elif self.activation_function == 'tanh':
-            return np.tanh(x)
+            self.z[i - 1] = z
 
     def sigmoid(self, x):
         x = np.clip(x, -500, 500)
         return 1 / (1 + np.exp(-x))
 
-    def backward_propagation(self, Y):
-        self.errors = {}
-        self.errors[len(self.weights)] = self.activations[len(self.weights)] - Y
+    def activation(self, x):
+        if self.activation_function == 'sigmoid' or self.loss_function == 'binary_cross_entropy':
+            return self.sigmoid(x)
+        elif self.activation_function == 'relu':
+            return np.maximum(0, x)
+        elif self.activation_function == 'tanh':
+            return np.tanh(x)
+        elif self.activation_function == 'linear':
+            return x
 
+    def activation_derivative(self, x):
+        if self.activation_function == 'sigmoid' or self.loss_function == 'binary_cross_entropy':
+            return self.sigmoid(x) * (1 - self.sigmoid(x))
+        elif self.activation_function == 'relu':
+            return 1. * np.where(x > 0, 1, 0)
+        elif self.activation_function == 'tanh':
+            return 1 - np.tanh(x) ** 2
+        elif self.activation_function == 'linear':
+            return 1
+
+    def backward_propagation(self, Y):
+        error = self.activations[len(self.weights)] - Y
+        
         M = Y.shape[0]
+
         grads_w = {}
         grads_b = {}
 
-        for i in range(len(self.weights), 0, -1):
-            grads_w[i - 1] = np.dot(self.activations[i - 1].T, self.errors[i]) / M
-            grads_b[i - 1] = np.sum(self.errors[i], axis=0, keepdims=True) / M
-            if i > 1:
-                self.errors[i - 1] = np.dot(self.errors[i], self.weights[i - 1].T) * self.activation_derivative(self.activations[i - 1])
+        for i in range(len(self.weights)-1, -1, -1):
+            grads_w[i] = np.dot(self.activations[i].T, error)/M  
+            grads_b[i] = np.sum(error, axis=0, keepdims=True)/M
+            if i > 0:
+                error = np.dot(error, self.weights[i].T) * self.activation_derivative(self.z[i-1])
         return grads_w, grads_b
-
-    def activation_derivative(self, x):
-        if self.activation_function == 'sigmoid':
-            return x * (1 - x)
-        elif self.activation_function == 'relu':
-            return 1. * (x > 0)
-        elif self.activation_function == 'tanh':
-            return 1 - x ** 2
 
     def update_weights(self, grads_w, grads_b):
         for i in range(len(self.weights)):
@@ -153,7 +159,7 @@ class MLPR:
         ss_residual = np.sum((Y_true - Y_pred) ** 2)
         if ss_total == 0:
             return 0
-        return 1 - ss_residual / ss_total
+        return 1 - (ss_residual / ss_total)
 
     def compute_metrics(self, Y_pred, Y_true):
         metrics = {
@@ -167,3 +173,49 @@ class MLPR:
     def predict(self, X):
         self.forward_propagation(X)
         return self.activations[len(self.weights)]
+    
+    def gradient_check(self, X, Y, epsilon=1e-7):
+        self.forward_propagation(X)
+        grads_w, grads_b = self.backward_propagation(Y)
+
+        numerical_grads_w = {}
+        numerical_grads_b = {}
+
+        for i in range(len(self.weights)):
+            numerical_grads_w[i] = np.zeros(self.weights[i].shape)
+            for j in range(self.weights[i].shape[0]):
+                for k in range(self.weights[i].shape[1]):
+                    self.weights[i][j, k] += epsilon
+                    loss_plus = self.compute_loss(X, Y)
+
+                    self.weights[i][j, k] -= 2 * epsilon
+                    loss_minus = self.compute_loss(X, Y)
+
+                    self.weights[i][j, k] += epsilon
+                    numerical_grads_w[i][j, k] = (loss_plus - loss_minus) / (2 * epsilon)
+
+        for i in range(len(self.biases)):
+            numerical_grads_b[i] = np.zeros(self.biases[i].shape)
+            for j in range(self.biases[i].shape[1]):
+                self.biases[i][0, j] += epsilon
+                loss_plus = self.compute_loss(X, Y)
+
+                self.biases[i][0, j] -= 2 * epsilon
+                loss_minus = self.compute_loss(X, Y)
+
+                self.biases[i][0, j] += epsilon
+                numerical_grads_b[i][0, j] = (loss_plus - loss_minus) / (2 * epsilon)
+
+        for i in range(len(self.weights)):
+            diff_w = np.linalg.norm(grads_w[i] - numerical_grads_w[i]) / (np.linalg.norm(grads_w[i]) + np.linalg.norm(numerical_grads_w[i]) + 1e-8)
+            if diff_w > 1e-4:
+                print(f"Gradient check failed for weights at layer {i} with difference {diff_w}")
+                return
+
+        for i in range(len(self.biases)):
+            diff_b = np.linalg.norm(grads_b[i] - numerical_grads_b[i]) / (np.linalg.norm(grads_b[i]) + np.linalg.norm(numerical_grads_b[i]) + 1e-8)
+            if diff_b > 1e-4:
+                print(f"Gradient check failed for biases at layer {i} with difference {diff_b}")
+                return
+
+        print("Gradient check passed")
