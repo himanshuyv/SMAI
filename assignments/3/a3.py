@@ -3,6 +3,7 @@ import pandas as pd
 import matplotlib.pyplot as plt
 from sklearn.preprocessing import StandardScaler, MinMaxScaler
 from sklearn.preprocessing import MultiLabelBinarizer
+from sklearn.preprocessing import OneHotEncoder
 import wandb
 
 import sys
@@ -13,9 +14,6 @@ from models.mlp_multilabel.MLP_multilabel import MLP_multilabel
 from models.mlp_regression.regression import MLPR
 from models.autoencoder.autoencoder import AutoEncoder
 from models.knn.knn import KNN
-
-
-
 
 
 def MLP_singleLabel(train_sweep=False):
@@ -45,26 +43,36 @@ def MLP_singleLabel(train_sweep=False):
 
     Y = Y.to_numpy()
 
+    if (len(np.unique(Y)) > 2):
+        one_hot_encoder = OneHotEncoder(sparse_output=False)
+        Y_one_hot = one_hot_encoder.fit_transform(Y.reshape(-1, 1))
+    else:
+        Y_one_hot = Y
+
     X_train = X[:int(0.8*len(X))]
     Y_train = Y[:int(0.8*len(Y))]
+    Y_train_one_hot = Y_one_hot[:int(0.8*len(Y_one_hot))]
     X_validation = X[int(0.8*len(X)):int(0.9*len(X))]
     Y_validation = Y[int(0.8*len(Y)):int(0.9*len(Y))]
+    Y_validation_one_hot = Y_one_hot[int(0.8*len(Y_one_hot)):int(0.9*len(Y_one_hot))]
     X_test = X[int(0.9*len(X)):]
     Y_test = Y[int(0.9*len(Y)):]
+    Y_test_one_hot = Y_one_hot[int(0.9*len(Y_one_hot)):]
 
     mlp = MLP(n_epochs=1000, neurons_per_layer=[64,32], activation_function='relu', optimizer='mini-batch', batch_size=32, learning_rate=0.05)
+    mlp.fit(X_train, Y_train_one_hot)
 
-    Y_train = Y_train
-    mlp.fit(X_train, Y_train)
+    mlp.gradient_check(X_train, Y_train_one_hot)
+    
     Y_pred = mlp.predict(X_test)
-    metrics = mlp.compute_metrics(Y_test, Y_pred)
+    Y_pred_label = one_hot_encoder.inverse_transform(Y_pred)
+    metrics = mlp.compute_metrics(Y_pred_label, Y_test)
+    print("Test Metrics: ")
     print("Accuracy: ", metrics['accuracy'])
     print("Precision: ", metrics['precision'])
     print("Recall: ", metrics['recall'])
     print("F1: ", metrics['f1'])
-    print("Loss: ", mlp.compute_loss(X, Y))
-
-    mlp.gradient_check(X_train, Y_train)
+    print("Loss: ", mlp.compute_loss(X_test, Y_test_one_hot))
 
     if train_sweep:
         sweep_config = {
@@ -297,6 +305,10 @@ def auto_encoder():
     X = X.to_numpy()
     Y = Y.to_numpy()
 
+    Y_unique = np.unique(Y)
+    Y_map_encode = {y: i for i, y in enumerate(Y_unique)}
+    Y_map_decode = {i: y for i, y in enumerate(Y_unique)}
+
     X_train = X[:int(0.8*len(X))]
     Y_train = Y[:int(0.8*len(Y))]
     X_validation = X[int(0.8*len(X)):int(0.9*len(X))]
@@ -318,48 +330,49 @@ def auto_encoder():
     accuracy = np.mean(Y_pred == Y_validation)
     print("Accuracy KNN: ", accuracy)
 
+    Y_train = np.array([Y_map_encode[y] for y in Y_train])
+    Y_validation = np.array([Y_map_encode[y] for y in Y_validation])
     mlp = MLP(n_epochs=100, neurons_per_layer=[64, 32], activation_function='relu', optimizer='mini-batch', batch_size=32, learning_rate=0.05)
     mlp.fit(X_train_reduced, Y_train)
     Y_pred = mlp.predict(X_validation_reduced)
+    print(Y_pred)
     accuracy = np.mean(Y_pred == Y_validation)
     print("Accuracy MLP: ", accuracy)
 
 
-def MLP_spotify():
-    df = pd.read_csv("./../../data/external/spotify.csv")
-    df = df.drop(columns=['Unnamed: 0'])
-    df = df.drop_duplicates(subset='track_id', keep="first")
-
-    df = df.sample(frac=1).reset_index(drop=True)
-    df_numerical = df.select_dtypes(include=['number'])
-
-    def normalize(df):
-        return (df - df.min()) / (df.max() - df.min())
-    df_numerical = normalize(df_numerical)
-
-    X = df_numerical
-    Y = df['track_genre']
-
-    X = X.to_numpy()
-    Y = Y.to_numpy()
-
-    X_train = X[:int(0.8*len(X))]
-    Y_train = Y[:int(0.8*len(Y))]
-    X_validation = X[int(0.8*len(X)):int(0.9*len(X))]
-    Y_validation = Y[int(0.8*len(Y)):int(0.9*len(Y))]
-    X_test = X[int(0.9*len(X)):]    
-    Y_test = Y[int(0.9*len(Y)):]
-
-    mlp = MLP(n_epochs=1000, neurons_per_layer=[64, 32], activation_function='relu', optimizer='mini-batch', batch_size=32, learning_rate=0.05)
-    mlp.fit(X_train, Y_train)
-    Y_pred = mlp.predict(X_validation)
-    accuracy = np.mean(Y_pred == Y_validation)
-    print("Accuracy: ", accuracy)
-
-
-# MLP_singleLabel(train_sweep=False)
+MLP_singleLabel(train_sweep=False)
 # MLP_multiLabel()
 # MLP_regression(train_sweep=False)
 # LogisticRegression()
-auto_encoder()
-# MLP_spotify()
+# auto_encoder()
+
+# while True:
+#     print("1. MLP Single Label")
+#     print("2. MLP Multi Label")
+#     print("3. MLP Regression")
+#     print("4. Logistic Regression")
+#     print("5. Auto Encoder")
+#     print("6. Exit")
+#     choice = int(input("Enter your choice: "))
+#     if choice == 1:
+#         sweep = input("Do you want to train sweep? (y/n): ")
+#         if sweep == 'y':
+#             MLP_singleLabel(train_sweep=True)
+#         else:
+#             MLP_singleLabel()
+#     elif choice == 2:
+#         MLP_multiLabel()
+#     elif choice == 3:
+#         sweep = input("Do you want to train sweep? (y/n): ")
+#         if sweep == 'y':
+#             MLP_regression(train_sweep=True)
+#         else:
+#             MLP_regression()
+#     elif choice == 4:
+#         LogisticRegression()
+#     elif choice == 5:
+#         auto_encoder()
+#     elif choice == 6:
+#         break
+#     else:
+#         print("Invalid Choice")
