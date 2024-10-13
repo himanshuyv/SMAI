@@ -2,7 +2,7 @@ import numpy as np
 import sys
 sys.path.append('./../../')
 
-from models.mlp_regression.regression import MLPR
+from models.mlp.regression import MLPR
 
 class AutoEncoder:
     def __init__(self, input_dim, latent_dim, learning_rate=0.01, n_epochs=200, batch_size=32, 

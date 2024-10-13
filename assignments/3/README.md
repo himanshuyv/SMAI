@@ -866,15 +866,15 @@ class AutoEncoder:
 - Performance for Reduced dataset using AutoEncoder for latent_dim = 8
 
 ``` 
-Accuracy:  0.1986850902607533
-Micro Precision:  0.1989289300457436
-Micro Recall:  0.1989289300457436
-Micro F1:  0.1989289300457436
-Macro Precision:  0.18567468559241332
-Macro Recall:  0.18947874083843821
-Macro F1:  0.17870149723734588
+Accuracy:  0.18597136330714803
+Micro Precision:  0.18612690978030558
+Micro Recall:  0.18612690978030558
+Micro F1:  0.18612690978030558
+Macro Precision:  0.1746170934914126
+Macro Recall:  0.18315556368879207
+Macro F1:  0.1696364645256168
 ```
-- Keeping all the features, with best k = 20 and best distance metric = 'cosine', the scores are as follows:
+- Keeping all the features, with best k = 20 and best distance metric = 'manhattan', the scores are as follows:
 ```
 
 Full Dataset
@@ -887,25 +887,25 @@ Macro Recall: 0.2478699674397185
 Macro F1: 0.24091608277387128
 ```
 
-- Keeping the best 8 features, with best k = 20 and best distance metric = 'cosine', the scores are as follows:
+- Keeping the best 8 features, with best k = 20 and best distance metric = 'manhattan', the scores are as follows:
 ```
 Reduced Dataset
-Accuracy: 0.21232380634018608
-Micro Precision: 0.21232380634018608
-Micro Recall: 0.21232380634018608
-Micro F1: 0.21232380634018608
-Macro Precision: 0.2023337961950314
-Macro Recall: 0.19550068347367766
-Macro F1: 0.1896011645793315
+Accuracy:  0.18597136330714803
+Micro Precision:  0.18612690978030558
+Micro Recall:  0.18612690978030558
+Micro F1:  0.18612690978030558
+Macro Precision:  0.1746170934914126
+Macro Recall:  0.18315556368879207
+Macro F1:  0.1696364645256168
 ```
 
 
 - MLP
 ```
 Performance for Reduced dataset using AutoEncoder
-Accuracy:  0.23111210162692222
-Precision:  0.2121673711254339
-Recall:  0.23111210162692222
-F1:  0.19944185926741698
-Loss:  3.0438028181870207
+Accuracy:  0.20708674577970917
+Precision:  0.18921976558977252
+Recall:  0.20708674577970917
+F1:  0.17586781184101258
+Loss:  3.2011893951802244
 ```

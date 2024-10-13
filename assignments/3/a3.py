@@ -10,10 +10,11 @@ import sys
 sys.path.append('./../../')
 
 from models.mlp.mlp import MLP
-from models.mlp_multilabel.MLP_multilabel import MLP_multilabel
-from models.mlp_regression.regression import MLPR
+from models.mlp.MLP_multilabel import MLP_multilabel
+from models.mlp.regression import MLPR
 from models.autoencoder.autoencoder import AutoEncoder
 from models.knn.knn import KNN
+from models.mlp.mlp_merged import MLP_merged
 from performance_measures.knn_score import Scores
 
 
@@ -60,7 +61,8 @@ def MLP_singleLabel(train_sweep=False):
     Y_test = Y[int(0.9*len(Y)):]
     Y_test_one_hot = Y_one_hot[int(0.9*len(Y_one_hot)):]
 
-    mlp = MLP(n_epochs=1000, neurons_per_layer=[64,32], activation_function='relu', optimizer='batch', batch_size=128, learning_rate=0.005)
+    # mlp = MLP(n_epochs=1000, neurons_per_layer=[64,32], activation_function='relu', optimizer='batch', batch_size=128, learning_rate=0.005)
+    mlp = MLP_merged(n_epochs=1000, neurons_per_layer=[64,32], activation_function='relu', optimizer='batch', batch_size=128, learning_rate=0.005)
     mlp.fit(X_train, Y_train_one_hot)
 
     mlp.gradient_check(X_train, Y_train_one_hot)
@@ -202,14 +204,8 @@ def MLP_regression(train_sweep=False):
     X_test = X[int(0.9*len(X)):]
     Y_test = Y[int(0.9*len(Y)):]
 
-    mlp_reg = MLPR(
-        learning_rate=0.001,
-        n_epochs=1000,
-        batch_size=16,
-        neurons_per_layer=[64, 32, 16],
-        activation_function='relu',
-        optimizer='sgd'
-    )
+    # mlp_reg = MLPR(learning_rate=0.001, n_epochs=1000, batch_size=16, neurons_per_layer=[64, 32, 16], activation_function='relu', optimizer='sgd')
+    mlp_reg = MLP_merged(learning_rate=0.001, n_epochs=1000, batch_size=16, neurons_per_layer=[64, 32, 16], activation_function='relu', optimizer='sgd', is_classification=False)
 
     mlp_reg.fit(X_train, Y_train)
     mlp_reg.gradient_check(X_train, Y_train)
@@ -316,12 +312,9 @@ def auto_encoder():
     X_train = X[:int(0.8*len(X))]
     Y_train = Y[:int(0.8*len(Y))]
     Y_train_one_hot = Y_one_hot[:int(0.8*len(Y_one_hot))]
-    X_validation = X[int(0.8*len(X)):int(0.9*len(X))]
-    Y_validation = Y[int(0.8*len(Y)):int(0.9*len(Y))]
-    Y_validation_one_hot = Y_one_hot[int(0.8*len(Y_one_hot)):int(0.9*len(Y_one_hot))]
-    X_test = X[int(0.9*len(X)):]    
-    Y_test = Y[int(0.9*len(Y)):]
-    Y_test_one_hot = Y_one_hot[int(0.9*len(Y_one_hot)):]
+    X_validation = X[int(0.8*len(X)):]
+    Y_validation = Y[int(0.8*len(Y)):]
+    Y_validation_one_hot = Y_one_hot[int(0.8*len(Y_one_hot)):]
 
     autoencoder = AutoEncoder(input_dim=X.shape[1], latent_dim=8, neurons_per_layer=[64, 32, 16], activation_function='relu', optimizer='sgd', n_epochs=200, learning_rate=0.01, batch_size=32)
     autoencoder.fit(X_train)
@@ -333,7 +326,7 @@ def auto_encoder():
 
     knn = KNN(k=20)
     knn.fit(X_train_reduced, Y_train)
-    Y_pred = knn.predict(X_validation_reduced, 'cosine')
+    Y_pred = knn.predict(X_validation_reduced, 'manhattan')
     scores = Scores(Y_pred, Y_validation)
     print("Accuracy: ", scores.accuracy)
     print("Micro Precision: ", scores.micro_precision)
@@ -351,13 +344,14 @@ def auto_encoder():
     mlp.fit(X_train_reduced, Y_train_one_hot)
     Y_pred_one_hot = mlp.predict(X_validation_reduced)
     Y_pred = one_hot_encoder.inverse_transform(Y_pred_one_hot)
-    
-    metrics = mlp.compute_metrics(Y_pred, Y_validation)
-    print("Validation Metrics: ")
-    print("Accuracy: ", metrics['accuracy'])
-    print("Precision: ", metrics['precision'])
-    print("Recall: ", metrics['recall'])
-    print("F1: ", metrics['f1'])
+    scores = Scores(Y_pred, Y_validation)
+    print("Accuracy: ", scores.accuracy)
+    print("Micro Precision: ", scores.micro_precision)
+    print("Micro Recall: ", scores.micro_recall)
+    print("Micro F1: ", scores.micro_f1)
+    print("Macro Precision: ", scores.macro_precision)
+    print("Macro Recall: ", scores.macro_recall)
+    print("Macro F1: ", scores.macro_f1)
     print("Loss: ", mlp.compute_loss(X_validation_reduced, Y_validation_one_hot))
 
 
