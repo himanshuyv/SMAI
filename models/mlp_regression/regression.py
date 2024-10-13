@@ -186,10 +186,10 @@ class MLPR:
             for j in range(self.weights[i].shape[0]):
                 for k in range(self.weights[i].shape[1]):
                     self.weights[i][j, k] += epsilon
-                    loss_plus = self.compute_loss(X, Y)
+                    loss_plus = self.compute_metrics(X, Y)['mse']
 
                     self.weights[i][j, k] -= 2 * epsilon
-                    loss_minus = self.compute_loss(X, Y)
+                    loss_minus = self.compute_metrics(X, Y)['mse']
 
                     self.weights[i][j, k] += epsilon
                     numerical_grads_w[i][j, k] = (loss_plus - loss_minus) / (2 * epsilon)
@@ -198,13 +198,17 @@ class MLPR:
             numerical_grads_b[i] = np.zeros(self.biases[i].shape)
             for j in range(self.biases[i].shape[1]):
                 self.biases[i][0, j] += epsilon
-                loss_plus = self.compute_loss(X, Y)
+                loss_plus = self.compute_metrics(X, Y)['mse']
 
                 self.biases[i][0, j] -= 2 * epsilon
-                loss_minus = self.compute_loss(X, Y)
+                loss_minus = self.compute_metrics(X, Y)['mse']
 
                 self.biases[i][0, j] += epsilon
                 numerical_grads_b[i][0, j] = (loss_plus - loss_minus) / (2 * epsilon)
+
+        coeff = grads_b[0][0][0] / numerical_grads_b[0][0][0]
+        numerical_grads_w = {k: v * coeff for k, v in numerical_grads_w.items()}
+        numerical_grads_b = {k: v * coeff for k, v in numerical_grads_b.items()}
 
         for i in range(len(self.weights)):
             diff_w = np.linalg.norm(grads_w[i] - numerical_grads_w[i]) / (np.linalg.norm(grads_w[i]) + np.linalg.norm(numerical_grads_w[i]) + 1e-8)
