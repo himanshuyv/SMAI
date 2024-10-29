@@ -10,8 +10,9 @@ class AutoEncoder:
                  optimizer='sgd', early_stopping=False, patience=10):
         self.input_dim = input_dim
         self.latent_dim = latent_dim
+        self.neurons_per_layer = neurons_per_layer
 
-        autoencoder_layers = neurons_per_layer[:-1] + [latent_dim] + neurons_per_layer[::-1] + [input_dim]
+        autoencoder_layers = neurons_per_layer + [latent_dim] + neurons_per_layer[::-1] + [input_dim]
         self.autoencoder = MLPR(learning_rate=learning_rate, n_epochs=n_epochs, batch_size=batch_size, 
                                 neurons_per_layer=autoencoder_layers, activation_function=activation_function, 
                                 loss_function=loss_function, optimizer=optimizer, early_stopping=early_stopping, 
@@ -23,7 +24,7 @@ class AutoEncoder:
     def get_latent(self, X):
         self.autoencoder.forward_propagation(X)
         activations = self.autoencoder.activations
-        latent_rep = activations[len(self.autoencoder.neurons_per_layer) // 2]
+        latent_rep = activations[len(self.neurons_per_layer)]
         return latent_rep
 
     def reconstruct(self, X):
