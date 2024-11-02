@@ -24,7 +24,7 @@ class AutoEncoder:
     def get_latent(self, X):
         self.autoencoder.forward_propagation(X)
         activations = self.autoencoder.activations
-        latent_rep = activations[len(self.neurons_per_layer)]
+        latent_rep = activations[len(self.autoencoder.neurons_per_layer) // 2]
         return latent_rep
 
     def reconstruct(self, X):
