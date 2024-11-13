@@ -7,6 +7,9 @@ import glob
 import seaborn as sns
 from sklearn.model_selection import train_test_split
 from hmmlearn import hmm
+from torch.utils.data import Dataset, DataLoader
+import torch
+import torch.nn as nn
 
 import warnings
 warnings.filterwarnings("ignore", category=UserWarning, module="librosa")
@@ -15,6 +18,8 @@ import sys
 sys.path.append('./../../')
 from models.kde.kde import KDE
 from models.gmm.gmm import Gmm
+from models.rnn.rnn import BitCounterRNN
+from models.rnn.rnn import BitCountingDataset, collate_fn
 
 def kde_fun():
     def generate_synthetic_data():
@@ -177,17 +182,99 @@ def rnn_fun():
         labels = []
         for _ in range(num_samples):
             length = np.random.randint(1, max_len + 1)
-            sequence = np.random.randint(0, 2, length)  # Random binary sequence
-            label = np.sum(sequence)  # Count of 1s
+            sequence = np.random.randint(0, 2, length)
+            label = np.sum(sequence)
             data.append(sequence)
             labels.append(label)
         return data, labels
+
+    def evaluate(model, data_loader, criterion, device):
+        model.eval()
+        total_loss = 0
+        with torch.no_grad():
+            for sequences, labels, lengths in data_loader:
+                sequences, labels, lengths = sequences.to(device), labels.to(device), lengths.to(device)
+                outputs = model(sequences, lengths)
+                loss = criterion(outputs.squeeze(), labels)
+                total_loss += loss.item() * sequences.size(0)
+        return total_loss / len(data_loader.dataset)
 
     data, labels = generate_bit_count_data()
     train_data, temp_data, train_labels, temp_labels = train_test_split(data, labels, test_size=0.2, random_state=42)
     val_data, test_data, val_labels, test_labels = train_test_split(temp_data, temp_labels, test_size=0.5, random_state=42)
 
-    print(f"Example sequence: {train_data[0]}, Label (count of 1s): {train_labels[0]}")
+    train_dataset = BitCountingDataset(train_data, train_labels)
+    val_dataset = BitCountingDataset(val_data, val_labels)
+    test_dataset = BitCountingDataset(test_data, test_labels)
+
+    batch_size = 64
+    train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True, collate_fn=collate_fn)
+    val_loader = DataLoader(val_dataset, batch_size=batch_size, shuffle=False, collate_fn=collate_fn)
+    test_loader = DataLoader(test_dataset, batch_size=batch_size, shuffle=False, collate_fn=collate_fn)
+
+    model = BitCounterRNN(input_size=1, hidden_size=32, num_layers=1)
+    criterion = nn.L1Loss()
+    optimizer = torch.optim.Adam(model.parameters(), lr=0.001)
+
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    model.to(device)
+    num_epochs = 20
+
+    for epoch in range(num_epochs):
+        model.train()
+        total_train_loss = 0
+        for sequences, labels, lengths in train_loader:
+            sequences, labels, lengths = sequences.to(device), labels.to(device), lengths.to(device)
+            outputs = model(sequences, lengths)
+            loss = criterion(outputs.squeeze(), labels.squeeze(-1))
+            optimizer.zero_grad()
+            loss.backward()
+            optimizer.step()
+            total_train_loss += loss.item() * sequences.size(0)
+        
+        train_loss = total_train_loss / len(train_loader.dataset)
+        val_loss = evaluate(model, val_loader, criterion, device)
+        print(f"Epoch [{epoch+1}/{num_epochs}], Train Loss: {train_loss:.4f}, Validation Loss: {val_loss:.4f}")
+
+
+    def generate_out_of_distribution_data(start_len=17, end_len=32, samples_per_length=1000):
+        data = []
+        labels = []
+        for length in range(start_len, end_len + 1):
+            for _ in range(samples_per_length):
+                sequence = np.random.randint(0, 2, length)
+                label = np.sum(sequence)
+                data.append(sequence)
+                labels.append(label)
+        return data, labels
+
+    ood_data, ood_labels = generate_out_of_distribution_data()
+    ood_dataset = BitCountingDataset(ood_data, ood_labels)
+    ood_loader = DataLoader(ood_dataset, batch_size=batch_size, shuffle=False, collate_fn=collate_fn)
+
+    lengths = list(range(17, 33))
+    mae_per_length = []
+
+    for length in lengths:
+        length_data = [seq for seq in ood_data if len(seq) == length]
+        length_labels = [label for seq, label in zip(ood_data, ood_labels) if len(seq) == length]
+        
+        length_dataset = BitCountingDataset(length_data, length_labels)
+        length_loader = DataLoader(length_dataset, batch_size=batch_size, shuffle=False, collate_fn=collate_fn)
+        
+        mae = evaluate(model, length_loader, criterion, device)
+        mae_per_length.append(mae)
+
+    plt.figure(figsize=(10, 6))
+    plt.plot(lengths, mae_per_length, marker='o', color='b')
+    plt.title('Model Generalization Across Sequence Lengths')
+    plt.xlabel('Sequence Length')
+    plt.ylabel('Mean Absolute Error (MAE)')
+    plt.grid(True)
+    plt.savefig('./figures/RNN_generalization.png')
+    plt.show()
+
+
 
 
 
