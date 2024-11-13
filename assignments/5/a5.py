@@ -1,96 +1,214 @@
 import numpy as np
 import matplotlib.pyplot as plt
-from scipy.stats import multivariate_normal
+from matplotlib.patches import Ellipse
+import librosa
+import os
+import glob
+import seaborn as sns
+from sklearn.model_selection import train_test_split
+from hmmlearn import hmm
+
+import warnings
+warnings.filterwarnings("ignore", category=UserWarning, module="librosa")
 
 import sys
 sys.path.append('./../../')
 from models.kde.kde import KDE
 from models.gmm.gmm import Gmm
 
-import numpy as np
-import matplotlib.pyplot as plt
+def kde_fun():
+    def generate_synthetic_data():
+        num_samples_large_circle = 3000
+        num_samples_small_circle = 500
 
-def generate_synthetic_data():
-    num_samples_large_circle = 3000
-    num_samples_small_circle = 500
-
-    theta = np.random.uniform(0, 2*np.pi, num_samples_large_circle)
-    r = np.random.uniform(0, 1, num_samples_large_circle)
-    x = 2* np.sqrt(r) * np.cos(theta)
-    y = 2* np.sqrt(r) * np.sin(theta)
-    data_large_circle = np.vstack((x, y)).T
-    noise_large_circle = np.random.normal(0, 0.2, (num_samples_large_circle, 2))
-    data_large_circle = data_large_circle + noise_large_circle
+        theta = np.random.uniform(0, 2*np.pi, num_samples_large_circle)
+        r = np.random.uniform(0, 1, num_samples_large_circle)
+        x = 2* np.sqrt(r) * np.cos(theta)
+        y = 2* np.sqrt(r) * np.sin(theta)
+        data_large_circle = np.vstack((x, y)).T
+        noise_large_circle = np.random.normal(0, 0.2, (num_samples_large_circle, 2))
+        data_large_circle = data_large_circle + noise_large_circle
 
 
-    theta = np.random.uniform(0, 2*np.pi, num_samples_small_circle)
-    r = np.random.uniform(0, 0.2, num_samples_small_circle)
-    x = r * np.cos(theta) + 1
-    y = r * np.sin(theta) + 1
-    data_small_circle = np.vstack((x, y)).T
-    data = np.vstack((data_large_circle, data_small_circle))
-    noise_small_circle = np.random.normal(0, 0.1, (num_samples_small_circle, 2))
-    data_small_circle = data_small_circle + noise_small_circle
-    return data
+        theta = np.random.uniform(0, 2*np.pi, num_samples_small_circle)
+        r = np.random.uniform(0, 0.2, num_samples_small_circle)
+        x = r * np.cos(theta) + 1
+        y = r * np.sin(theta) + 1
+        data_small_circle = np.vstack((x, y)).T
+        data = np.vstack((data_large_circle, data_small_circle))
+        noise_small_circle = np.random.normal(0, 0.1, (num_samples_small_circle, 2))
+        data_small_circle = data_small_circle + noise_small_circle
+        return data
 
-data = generate_synthetic_data()
-
-
-plt.figure(figsize=(8, 8))
-plt.scatter(data[:, 0], data[:, 1], s=5, alpha=0.6, color='black')
-plt.xlabel('X')
-plt.ylabel('Y')
-plt.xlim(-4, 4)
-plt.ylim(-4, 4)
-plt.title('KDE Original Data')
-plt.grid(True)
-plt.savefig('KDE_original_data.png')
+    data = generate_synthetic_data()
 
 
-kde = KDE(kernel='gaussian', bandwidth=0.5)
-kde.fit(data)
-
-point = np.array([1, 1])
-density = kde.predict(point)
-print(f"Density at {point}: {density}")
-
-point = np.array([0, 0])
-density = kde.predict(point)
-print(f"Density at {point}: {density}")
-
-kde.visualize(x_range=(-3, 3), y_range=(-3, 3), resolution=100)
-
-import matplotlib.pyplot as plt
-from matplotlib.patches import Ellipse
-
-def plot_gmm(data, means, covariances, title, save_path):
     plt.figure(figsize=(8, 8))
-    plt.scatter(data[:, 0], data[:, 1], s=5, alpha=0.6, color="blue", label="Data Points")
-    colors = ['red', 'green', 'orange', 'purple', 'cyan']
-    
-    for i, (mean, cov) in enumerate(zip(means, covariances)):
-        color = colors[i % len(colors)]
-        eigvals, eigvecs = np.linalg.eigh(cov)
-        angle = np.degrees(np.arctan2(eigvecs[0, 1], eigvecs[0, 0]))
-        width, height = 2 * np.sqrt(eigvals)
+    plt.scatter(data[:, 0], data[:, 1], s=5, alpha=0.6, color='black')
+    plt.xlabel('X')
+    plt.ylabel('Y')
+    plt.xlim(-4, 4)
+    plt.ylim(-4, 4)
+    plt.title('KDE Original Data')
+    plt.grid(True)
+    plt.savefig('./figures/KDE_original_data.png')
+
+
+    kde = KDE(kernel='gaussian', bandwidth=0.5)
+    kde.fit(data)
+
+    point = np.array([1, 1])
+    density = kde.predict(point)
+    print(f"Density at {point}: {density}")
+
+    point = np.array([0, 0])
+    density = kde.predict(point)
+    print(f"Density at {point}: {density}")
+
+    kde.visualize(x_range=(-3, 3), y_range=(-3, 3), resolution=100)
+
+    def plot_gmm(data, means, covariances, title, save_path):
+        plt.figure(figsize=(8, 8))
+        plt.scatter(data[:, 0], data[:, 1], s=5, alpha=0.6, color="blue", label="Data Points")
+        colors = ['red', 'green', 'orange', 'purple', 'cyan']
         
-        ellip = Ellipse(xy=mean, width=width, height=height, angle=angle, color=color, alpha=0.3)
-        plt.gca().add_patch(ellip)
-        plt.scatter(mean[0], mean[1], c=color, s=100, marker='x', label=f"Component {i+1}")
-    
-    plt.xlabel("X-axis")
-    plt.ylabel("Y-axis")
-    plt.title(title)
-    plt.legend()
-    plt.axis("equal")
-    plt.savefig(save_path)
+        for i, (mean, cov) in enumerate(zip(means, covariances)):
+            color = colors[i % len(colors)]
+            eigvals, eigvecs = np.linalg.eigh(cov)
+            angle = np.degrees(np.arctan2(eigvecs[0, 1], eigvecs[0, 0]))
+            width, height = 2 * np.sqrt(eigvals)
+            
+            ellip = Ellipse(xy=mean, width=width, height=height, angle=angle, color=color, alpha=0.3)
+            plt.gca().add_patch(ellip)
+            plt.scatter(mean[0], mean[1], c=color, s=100, marker='x', label=f"Component {i+1}")
+        
+        plt.xlabel("X-axis")
+        plt.ylabel("Y-axis")
+        plt.title(title)
+        plt.legend()
+        plt.axis("equal")
+        plt.savefig(save_path)
 
 
-for k in [2, 5, 10]:
-    gmm_model = Gmm(k=k, n_iter=100)
-    gmm_model.fit(data)
+    for k in [2, 5, 10]:
+        gmm_model = Gmm(k=k, n_iter=100)
+        gmm_model.fit(data)
 
-    pi, mu, sigma = gmm_model.get_params()
-    plot_gmm(data, mu, sigma, f"GMM with {k} components", f"GMM_{k}_components.png")
-    
-plt.show()
+        pi, mu, sigma = gmm_model.get_params()
+        plot_gmm(data, mu, sigma, f"GMM with {k} components", f"./figures/GMM_{k}_components.png")
+        
+    plt.show()
+
+def hmm_fun():
+    def extract_mfcc(file_path, n_mfcc=13):
+        audio, sample_rate = librosa.load(file_path, sr=None)
+        mfccs = librosa.feature.mfcc(y=audio, sr=sample_rate, n_mfcc=n_mfcc)
+        return mfccs.T 
+
+    dataset_path = './../../data/external/recordings'
+    data = {str(i): [] for i in range(10)}
+
+    for file_path in glob.glob(os.path.join(dataset_path, '*.wav')):
+        digit = file_path.replace('\\','/').split('/')[-1][0]
+        mfcc_features = extract_mfcc(file_path)
+        data[digit].append(mfcc_features)
+
+    def plot_mfcc(mfcc, title='MFCC'):
+        sns.heatmap(mfcc.T, cmap='viridis')
+        plt.title(title)
+        plt.ylabel('MFCC Coefficients')
+        plt.xlabel('Time')
+
+    for digit in data:
+        plt.figure(figsize=(8, 8))
+        for i, mfcc in enumerate(data[digit][:3]):
+            plt.subplot(3, 1, i+1)
+            plot_mfcc(mfcc, title=f'Digit {digit} - Sample {i+1}')
+        plt.tight_layout()  
+        plt.savefig(f'./figures/Digit_{digit}_MFCC.png')
+
+    models = {}
+
+    for digit, features in data.items():
+        X = np.concatenate(features)
+        lengths = [len(f) for f in features]
+        model = hmm.GaussianHMM(n_components=5, covariance_type="diag", n_iter=100)
+        model.fit(X, lengths)
+        models[digit] = model
+
+    def predict_digit(mfcc):
+        log_likelihoods = {}
+        for digit, model in models.items():
+            log_likelihood = model.score(mfcc)
+            log_likelihoods[digit] = log_likelihood
+        return max(log_likelihoods, key=log_likelihoods.get)
+
+    def evaluate_accuracy(data):
+        correct = 0
+        total = 0
+        for digit, features in data.items():
+            for mfcc in features:
+                prediction = predict_digit(mfcc)
+                if prediction == digit:
+                    correct += 1
+                total += 1
+        accuracy = correct / total
+        return accuracy
+
+    data_list = [(digit, mfcc) for digit, features in data.items() for mfcc in features]
+
+    train_list, test_list = train_test_split(data_list, test_size=0.2)
+
+    train_data = {str(i): [] for i in range(10)}
+    test_data = {str(i): [] for i in range(10)}
+
+    for digit, mfcc in train_list:
+        train_data[digit].append(mfcc)
+    for digit, mfcc in test_list:
+        test_data[digit].append(mfcc)
+
+    accuracy = evaluate_accuracy(test_data)
+    print(f"Recognition Accuracy on Test Set: {accuracy * 100:.2f}%")
+
+
+def rnn_fun():
+    def generate_bit_count_data(num_samples=100000, max_len=16):
+        data = []
+        labels = []
+        for _ in range(num_samples):
+            length = np.random.randint(1, max_len + 1)
+            sequence = np.random.randint(0, 2, length)  # Random binary sequence
+            label = np.sum(sequence)  # Count of 1s
+            data.append(sequence)
+            labels.append(label)
+        return data, labels
+
+    data, labels = generate_bit_count_data()
+    train_data, temp_data, train_labels, temp_labels = train_test_split(data, labels, test_size=0.2, random_state=42)
+    val_data, test_data, val_labels, test_labels = train_test_split(temp_data, temp_labels, test_size=0.5, random_state=42)
+
+    print(f"Example sequence: {train_data[0]}, Label (count of 1s): {train_labels[0]}")
+
+
+
+# kde_fun()
+# hmm_fun()
+# rnn_fun()
+
+if __name__ == '__main__':
+    while True:
+        print("1. KDE")
+        print("2. HMM")
+        print("3. RNN")
+        print("4. Exit")
+        choice = int(input("Enter your choice: "))
+        if choice == 1:
+            kde_fun()
+        elif choice == 2:
+            hmm_fun()
+        elif choice == 3:
+            rnn_fun()
+        elif choice == 4:
+            break
+        else:
+            print("Invalid choice. Please enter again.")

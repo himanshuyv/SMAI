@@ -38,4 +38,4 @@ class KDE:
         plt.ylabel('Y')
         plt.title(f'KDE Density Visualization ({self.kernel} kernel)')
         plt.colorbar(label='Density')
-        plt.savefig(f'KDE_{self.kernel}_kernel.png')
+        plt.savefig(f'./figures/KDE_{self.kernel}_kernel.png')
