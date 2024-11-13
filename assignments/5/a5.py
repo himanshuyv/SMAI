@@ -1,9 +1,11 @@
 import numpy as np
 import matplotlib.pyplot as plt
+from scipy.stats import multivariate_normal
 
 import sys
 sys.path.append('./../../')
 from models.kde.kde import KDE
+from models.gmm.gmm import Gmm
 
 import numpy as np
 import matplotlib.pyplot as plt
@@ -57,3 +59,38 @@ density = kde.predict(point)
 print(f"Density at {point}: {density}")
 
 kde.visualize(x_range=(-3, 3), y_range=(-3, 3), resolution=100)
+
+import matplotlib.pyplot as plt
+from matplotlib.patches import Ellipse
+
+def plot_gmm(data, means, covariances, title, save_path):
+    plt.figure(figsize=(8, 8))
+    plt.scatter(data[:, 0], data[:, 1], s=5, alpha=0.6, color="blue", label="Data Points")
+    colors = ['red', 'green', 'orange', 'purple', 'cyan']
+    
+    for i, (mean, cov) in enumerate(zip(means, covariances)):
+        color = colors[i % len(colors)]
+        eigvals, eigvecs = np.linalg.eigh(cov)
+        angle = np.degrees(np.arctan2(eigvecs[0, 1], eigvecs[0, 0]))
+        width, height = 2 * np.sqrt(eigvals)
+        
+        ellip = Ellipse(xy=mean, width=width, height=height, angle=angle, color=color, alpha=0.3)
+        plt.gca().add_patch(ellip)
+        plt.scatter(mean[0], mean[1], c=color, s=100, marker='x', label=f"Component {i+1}")
+    
+    plt.xlabel("X-axis")
+    plt.ylabel("Y-axis")
+    plt.title(title)
+    plt.legend()
+    plt.axis("equal")
+    plt.savefig(save_path)
+
+
+for k in [2, 5, 10]:
+    gmm_model = Gmm(k=k, n_iter=100)
+    gmm_model.fit(data)
+
+    pi, mu, sigma = gmm_model.get_params()
+    plot_gmm(data, mu, sigma, f"GMM with {k} components", f"GMM_{k}_components.png")
+    
+plt.show()
