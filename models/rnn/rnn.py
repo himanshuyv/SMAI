@@ -1,10 +1,8 @@
-import numpy as np
 import torch
 import torch.nn as nn
-from torch.utils.data import Dataset, DataLoader
+from torch.utils.data import Dataset
 from torch.nn.utils.rnn import pad_sequence, pack_padded_sequence, pad_packed_sequence
-from sklearn.model_selection import train_test_split
-import matplotlib.pyplot as plt
+
 
 class BitCountingDataset(Dataset):
     def __init__(self, sequences, labels):
@@ -20,7 +18,7 @@ class BitCountingDataset(Dataset):
         length = len(sequence)
         return sequence, label, length
 
-def collate_fn(batch):
+def collate_fn_rnn(batch):
     sequences, labels, lengths = zip(*batch)
     sequences_padded = pad_sequence(sequences, batch_first=True, padding_value=0)
     labels = torch.stack(labels)
