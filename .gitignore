@@ -4,3 +4,4 @@
 /*/*/__pycache__
 /*/*/wandb
 /data/external/fashion_mnist
+/data/external/word_images

@@ -7,7 +7,7 @@ import glob
 import seaborn as sns
 from sklearn.model_selection import train_test_split
 from hmmlearn import hmm
-from torch.utils.data import Dataset, DataLoader
+from torch.utils.data import DataLoader
 import torch
 import torch.nn as nn
 from tqdm import tqdm
@@ -23,7 +23,7 @@ sys.path.append('./../../')
 from models.kde.kde import KDE
 from models.gmm.gmm import Gmm
 from models.rnn.rnn import BitCounterRNN, BitCountingDataset, collate_fn_rnn
-from models.ocr.ocr import OCRModel, OCRDataset, collate_fn_ocr
+from models.ocr.ocr import OCRModel, OCRDataset
 
 def kde_fun():
     def generate_synthetic_data():
@@ -182,8 +182,7 @@ def hmm_fun():
 
 def rnn_fun():
     def generate_bit_count_data(num_samples=100000, max_len=16):
-        data = []
-        labels = []
+        data, labels = [], []
         for _ in range(num_samples):
             length = np.random.randint(1, max_len + 1)
             sequence = np.random.randint(0, 2, length)
@@ -214,12 +213,10 @@ def rnn_fun():
     batch_size = 64
     train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True, collate_fn=collate_fn_rnn)
     val_loader = DataLoader(val_dataset, batch_size=batch_size, shuffle=False, collate_fn=collate_fn_rnn)
-    # test_loader = DataLoader(test_dataset, batch_size=batch_size, shuffle=False, collate_fn=collate_fn_rnn)
 
     model = BitCounterRNN(input_size=1, hidden_size=32, num_layers=1)
     criterion = nn.L1Loss()
     optimizer = torch.optim.Adam(model.parameters(), lr=0.001)
-
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     model.to(device)
     num_epochs = 10
@@ -240,10 +237,8 @@ def rnn_fun():
         val_loss = evaluate(model, val_loader, criterion, device)
         print(f"Epoch [{epoch+1}/{num_epochs}], Train Loss: {train_loss:.4f}, Validation Loss: {val_loss:.4f}")
 
-
     def generate_out_of_distribution_data(start_len=1, end_len=32, samples_per_length=1000):
-        data = []
-        labels = []
+        data, labels = [], []
         for length in range(start_len, end_len + 1):
             for _ in range(samples_per_length):
                 sequence = np.random.randint(0, 2, length)
@@ -253,9 +248,6 @@ def rnn_fun():
         return data, labels
 
     ood_data, ood_labels = generate_out_of_distribution_data()
-    ood_dataset = BitCountingDataset(ood_data, ood_labels)
-    ood_loader = DataLoader(ood_dataset, batch_size=batch_size, shuffle=False, collate_fn=collate_fn_rnn)
-
     lengths = list(range(1, 33))
     mae_per_length = []
 
@@ -278,125 +270,120 @@ def rnn_fun():
     plt.savefig('./figures/RNN_generalization.png')
     plt.show()
 
+
 def rnn2_fun():
     def generate_word_images(word_list, image_dir, image_size=(256, 64)):
         if not os.path.exists(image_dir):
             os.makedirs(image_dir)
-        
         for word in tqdm(word_list, desc="Generating Images"):
             img = Image.new('L', image_size, color=255)
             draw = ImageDraw.Draw(img)
             font = ImageFont.load_default()
+            font_size = 28
+            font = ImageFont.truetype("arial.ttf", font_size)
             bbox = draw.textbbox((0, 0), word, font=font)
-            text_width = bbox[2] - bbox[0]
-            text_height = bbox[3] - bbox[1]
-            text_x = (image_size[0] - text_width) // 2
-            text_y = (image_size[1] - text_height) // 2
-            draw.text((text_x, text_y), word, font=font, fill=0)
+            x = (image_size[0] - (bbox[2] - bbox[0])) // 2
+            y = (image_size[1] - (bbox[3] - bbox[1])) // 2
+            draw.text((x, y), word, font=font, fill=0)
             img.save(os.path.join(image_dir, f"{word}.png")) 
 
-    image_dir = "word_images"
-    word_list = words.words()[:10]
-    generate_word_images(word_list, image_dir)
-    def average_correct_characters(preds, labels):
-        total_correct = 0
-        total_chars = 0
-        
-        for pred, label in zip(preds, labels):
-            pred_chars = torch.argmax(pred, dim=1)
-            correct = (pred_chars == label).sum().item()
-            total_correct += correct
-            total_chars += len(label)
-        
-        return total_correct / total_chars
+    image_dir = "./../../data/external/word_images"
+    # word_list = words.words()[:100000]
+    # generate_word_images(word_list, image_dir)
 
-    def train_model(model, train_loader, val_loader, num_epochs=10, learning_rate=0.001, device='cuda'):
-        optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate)
-        criterion = nn.CrossEntropyLoss()
-        
+    def create_image_label_lists(image_dir):
+        image_paths = []
+        labels = []
+        count = 0
+        for filename in os.listdir(image_dir):
+            if filename.endswith(".png"):
+                label = os.path.splitext(filename)[0]
+                image_paths.append(os.path.join(image_dir, filename))
+                labels.append(label)
+                count += 1
+
+            # if count == 1000:
+            #     break
+        return image_paths, labels
+
+    image_paths, labels = create_image_label_lists(image_dir)
+    max_word_length = max(len(label) for label in labels)
+    print(f"Max Word Length: {max_word_length}")
+
+    train_size = int(0.8 * len(image_paths))
+    val_size = int(0.1 * len(image_paths))
+    test_size = len(image_paths) - train_size - val_size
+
+    train_paths, val_paths, test_paths = image_paths[:train_size], image_paths[train_size:train_size + val_size], image_paths[train_size + val_size:]
+    train_labels, val_labels, test_labels = labels[:train_size], labels[train_size:train_size + val_size], labels[train_size + val_size:]
+
+    train_dataset = OCRDataset(train_paths, train_labels, max_length=max_word_length)
+    val_dataset = OCRDataset(val_paths, val_labels, max_length=max_word_length)
+    test_dataset = OCRDataset(test_paths, test_labels, max_length=max_word_length)
+
+    batch_size = 64
+    train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True)
+    val_loader = DataLoader(val_dataset, batch_size=batch_size, shuffle=False)
+    test_loader = DataLoader(test_dataset, batch_size=batch_size, shuffle=False)
+
+    def decode_label(one_hot_encoded):
+        char_map = "@ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz"
+        decoded = ""
+        for i in range(one_hot_encoded.shape[0]):
+            idx = torch.argmax(one_hot_encoded[i]).item()
+            if idx == 0:
+                break
+            decoded += char_map[idx]
+        return decoded
+
+    model = OCRModel(num_classes=53, max_length=max_word_length)
+    criterion = nn.BCEWithLogitsLoss()
+    optimizer = torch.optim.Adam(model.parameters(), lr=0.001)
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    model.to(device)
+
+    def train(model, train_loader, val_loader, criterion, optimizer, num_epochs=10, device='cuda'):
         model.to(device)
-        train_losses = []
-        val_losses = []
-        val_accuracies = []
         
         for epoch in range(num_epochs):
             model.train()
-            total_train_loss = 0
+            train_loss = 0
+            train_loader_tqdm = tqdm(train_loader, desc=f"Epoch [{epoch+1}/{num_epochs}] - Training")
             
-            for images, labels, lengths in train_loader:
-                images, labels, lengths = images.to(device), labels.to(device), lengths.to(device)
-                
+            for images, labels in train_loader_tqdm:
+                images, labels = images.to(device), labels.to(device)
                 optimizer.zero_grad()
-                outputs, _ = model(images, lengths)
-                
-                outputs = outputs.view(-1, outputs.size(-1))
-                labels = labels.view(-1)
-                
+                outputs = model(images)
                 loss = criterion(outputs, labels)
                 loss.backward()
                 optimizer.step()
-                total_train_loss += loss.item()
+                train_loss += loss.item()
             
-            avg_train_loss = total_train_loss / len(train_loader)
-            train_losses.append(avg_train_loss)
-            
+            train_loss /= len(train_loader)
+
             model.eval()
-            total_val_loss = 0
-            total_val_correct_chars = 0
+            val_loss = 0
+            correct_chars = 0
+            total_chars = 0
             
             with torch.no_grad():
-                for images, labels, lengths in val_loader:
-                    images, labels, lengths = images.to(device), labels.to(device), lengths.to(device)
-                    outputs, _ = model(images, lengths)
-
-                    outputs_flat = outputs.view(-1, outputs.size(-1))
-                    labels_flat = labels.view(-1)
-                    val_loss = criterion(outputs_flat, labels_flat)
-                    total_val_loss += val_loss.item()
+                for images, labels in val_loader:
+                    images, labels = images.to(device), labels.to(device)
+                    outputs = model(images)
+                    val_loss += criterion(outputs, labels).item()
                     
-                    total_val_correct_chars += average_correct_characters(outputs, labels)
-            
-            avg_val_loss = total_val_loss / len(val_loader)
-            avg_val_accuracy = total_val_correct_chars / len(val_loader)
-            
-            val_losses.append(avg_val_loss)
-            val_accuracies.append(avg_val_accuracy)
-            
-            print(f"Epoch {epoch + 1}/{num_epochs} - "
-                f"Train Loss: {avg_train_loss:.4f}, "
-                f"Validation Loss: {avg_val_loss:.4f}, "
-                f"Validation Accuracy (Correct Characters): {avg_val_accuracy:.4f}")
-        
-        return train_losses, val_losses, val_accuracies
-    
-    def load_image(image_path, image_size=(256, 64)):
-        img = Image.open(image_path).convert('L')
-        img = img.resize(image_size)
-        img = np.array(img) / 255.0
-        img = torch.FloatTensor(img).unsqueeze(0).unsqueeze(0)
-        return img
-    
-    def load_images(image_dir):
-        images = []
-        labels = []
-        for image_path in os.listdir(image_dir):
-            image = load_image(os.path.join(image_dir, image_path))
-            images.append(image)
-            label = image_path.split('.')[0]
-        return images, labels
-    
-    data, labels = load_images(image_dir)
-    train_dataset = OCRDataset(data, labels)
-    val_dataset = OCRDataset(data, labels)
-    train_loader = DataLoader(train_dataset, batch_size=64, shuffle=True, collate_fn=collate_fn_ocr)
-    val_loader = DataLoader(val_dataset, batch_size=64, shuffle=False, collate_fn=collate_fn_ocr)
+                    for i in range(len(labels)):
+                        predicted_label = decode_label(outputs[i])
+                        true_label = decode_label(labels[i])
+                        print(f"Predicted: {predicted_label}, True: {true_label}")
+                        correct_chars += sum(p == t for p, t in zip(predicted_label, true_label))
+                        total_chars += len(true_label)
 
-    model = OCRModel(cnn_output_dim=128, rnn_hidden_dim=32, num_classes=100)
-    train_losses, val_losses, val_accuracies = train_model(model, train_loader, val_loader)
+            val_loss /= len(val_loader)
+            avg_correct_chars = correct_chars / total_chars
+            print(f"Epoch [{epoch+1}/{num_epochs}], Train Loss: {train_loss:.4f}, Val Loss: {val_loss:.4f}, Avg Correct Chars: {avg_correct_chars:.4f}")
 
-    print(train_losses, val_losses, val_accuracies)
-
-
+    train(model, train_loader, val_loader, criterion, optimizer, num_epochs=10, device=device)
 
 
 # kde_fun()

@@ -1,64 +1,69 @@
 import torch
 import torch.nn as nn
 from torch.utils.data import Dataset
-from torch.nn.utils.rnn import pad_sequence, pack_padded_sequence, pad_packed_sequence
+from PIL import Image
+import numpy as np
+
+class OCRDataset(Dataset):
+    def __init__(self, image_paths, labels, max_length=20, num_classes=53):
+        self.image_paths = image_paths
+        self.labels = labels
+        self.max_length = max_length
+        self.num_classes = num_classes
+        self.char2idx = self.create_char_map()
+    
+    def create_char_map(self):
+        chars = '@ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz'
+        char_map = {}
+        for idx, char in enumerate(chars):
+            char_map[char] = idx
+        return char_map
+    
+    def encode_label(self, label):
+        one_hot_encoded = torch.zeros((self.max_length, self.num_classes), dtype=torch.float)
+        cur_label = label
+        cur_len = len(label)
+        cur_label = cur_label + '@' * (self.max_length - cur_len)
+        for idx, char in enumerate(cur_label[:self.max_length]):
+            one_hot_encoded[idx][self.char2idx[char]] = 1.0
+        return one_hot_encoded
+
+    def __len__(self):
+        return len(self.image_paths)
+
+    def __getitem__(self, idx):
+        image = Image.open(self.image_paths[idx]).convert('L')
+        image = torch.tensor(np.array(image), dtype=torch.float32).unsqueeze(0) / 255.0
+        label = self.encode_label(self.labels[idx])
+        return image, label
+    
 
 class OCRModel(nn.Module):
-    def __init__(self, cnn_output_dim, rnn_hidden_dim, num_classes, dropout_prob=0.5):
+    def __init__(self, num_classes=53, max_length=20, hidden_dim=256):
         super(OCRModel, self).__init__()
-
-        self.cnn = nn.Sequential(
+        self.num_classes = num_classes
+        self.max_length = max_length
+        self.hidden_dim = hidden_dim
+        self.encoder = nn.Sequential(
             nn.Conv2d(1, 32, kernel_size=3, stride=1, padding=1),
-            nn.BatchNorm2d(32),
             nn.ReLU(),
             nn.MaxPool2d(2, 2),
-            
             nn.Conv2d(32, 64, kernel_size=3, stride=1, padding=1),
-            nn.BatchNorm2d(64),
             nn.ReLU(),
             nn.MaxPool2d(2, 2),
-            
             nn.Conv2d(64, 128, kernel_size=3, stride=1, padding=1),
-            nn.BatchNorm2d(128),
             nn.ReLU(),
             nn.MaxPool2d(2, 2)
         )
-        
-        self.flatten_dim = (256 // 8) * (64 // 8) * 128
-        self.fc = nn.Linear(self.flatten_dim, cnn_output_dim)
-
-        self.rnn = nn.LSTM(input_size=cnn_output_dim, hidden_size=rnn_hidden_dim, num_layers=2, dropout=dropout_prob, batch_first=True)
-        self.output_layer = nn.Linear(rnn_hidden_dim, num_classes)
+        self.flatten = nn.Flatten(start_dim=1)
+        self.fc = nn.Linear(128 * 32 * 8, hidden_dim)
+        self.rnn = nn.GRU(hidden_dim, hidden_dim, batch_first=True)
+        self.fc_out = nn.Linear(hidden_dim, num_classes)
 
     def forward(self, x):
-        batch_size = x.size(0)
-    
-        cnn_features = self.cnn(x)
-        cnn_features = cnn_features.view(batch_size, -1)
-        
-        cnn_features = self.fc(cnn_features)
-        cnn_features = cnn_features.unsqueeze(1).repeat(1, 10, 1)
-        rnn_output, _ = self.rnn(cnn_features)
-        output = self.output_layer(rnn_output)
-        return output
-    
-
-
-class OCRDataset(Dataset):
-    def __init__(self, data, labels):
-        self.data = data
-        self.labels = labels
-
-    def __len__(self):
-        return len(self.data)
-
-    def __getitem__(self, idx):
-        image = torch.FloatTensor(self.data[idx]).unsqueeze(0)
-        label = torch.LongTensor(self.labels[idx])
-        return image, label, len(label)
-    
-def collate_fn_ocr(batch):
-    images, labels = zip(*batch)
-    images = torch.stack(images)
-    labels = torch.stack(labels)
-    return images, labels
+        x = self.encoder(x)
+        x = self.flatten(x)
+        x = self.fc(x).unsqueeze(1).repeat(1, self.max_length, 1)
+        rnn_out, _ = self.rnn(x)
+        out = self.fc_out(rnn_out)
+        return out

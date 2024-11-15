@@ -3,7 +3,6 @@ import torch.nn as nn
 from torch.utils.data import Dataset
 from torch.nn.utils.rnn import pad_sequence, pack_padded_sequence, pad_packed_sequence
 
-
 class BitCountingDataset(Dataset):
     def __init__(self, sequences, labels):
         self.sequences = sequences
@@ -28,8 +27,6 @@ def collate_fn_rnn(batch):
 class BitCounterRNN(nn.Module):
     def __init__(self, input_size=1, hidden_size=32, num_layers=1):
         super(BitCounterRNN, self).__init__()
-        self.hidden_size = hidden_size
-        self.num_layers = num_layers
         self.rnn = nn.RNN(input_size, hidden_size, num_layers, batch_first=True)
         self.fc = nn.Linear(hidden_size, 1)
         
@@ -40,3 +37,4 @@ class BitCounterRNN(nn.Module):
         out = out[torch.arange(out.size(0)), lengths - 1]
         out = self.fc(out)
         return out
+
