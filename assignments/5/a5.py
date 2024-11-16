@@ -271,7 +271,7 @@ def rnn_fun():
     plt.show()
 
 
-def rnn2_fun():
+def ocr_fun():
     def generate_word_images(word_list, image_dir, image_size=(256, 64)):
         if not os.path.exists(image_dir):
             os.makedirs(image_dir)
@@ -335,12 +335,17 @@ def rnn2_fun():
                 break
             decoded += char_map[idx]
         return decoded
+    
+    def get_weights(labels):
+        weigths = torch.ones(53, dtype=torch.float)
+        weigths[0] = 0.1
+        return weigths
 
-    model = OCRModel(num_classes=53, max_length=max_word_length)
-    criterion = nn.BCEWithLogitsLoss()
-    optimizer = torch.optim.Adam(model.parameters(), lr=0.001)
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    model.to(device)
+    model = OCRModel(num_classes=53, max_length=max_word_length).to(device)
+    weigth = get_weights(train_labels).to(device)
+    criterion = nn.CrossEntropyLoss(weight=weigth)
+    optimizer = torch.optim.Adam(model.parameters(), lr=0.001)
 
     def train(model, train_loader, val_loader, criterion, optimizer, num_epochs=10, device='cuda'):
         model.to(device)
@@ -354,6 +359,8 @@ def rnn2_fun():
                 images, labels = images.to(device), labels.to(device)
                 optimizer.zero_grad()
                 outputs = model(images)
+                outputs = outputs.permute(0, 2, 1)
+                labels = labels.permute(0, 2, 1)
                 loss = criterion(outputs, labels)
                 loss.backward()
                 optimizer.step()
@@ -370,12 +377,17 @@ def rnn2_fun():
                 for images, labels in val_loader:
                     images, labels = images.to(device), labels.to(device)
                     outputs = model(images)
+                    outputs = outputs.permute(0, 2, 1)
+                    labels = labels.permute(0, 2, 1)
                     val_loss += criterion(outputs, labels).item()
-                    
+                    outputs = outputs.permute(0, 2, 1)
+                    labels = labels.permute(0, 2, 1)
                     for i in range(len(labels)):
                         predicted_label = decode_label(outputs[i])
                         true_label = decode_label(labels[i])
-                        print(f"Predicted: {predicted_label}, True: {true_label}")
+                        
+                        if i < 5000 and i % 100 == 0:
+                            print(f"Predicted: {predicted_label}, True: {true_label}")
                         correct_chars += sum(p == t for p, t in zip(predicted_label, true_label))
                         total_chars += len(true_label)
 
@@ -389,14 +401,15 @@ def rnn2_fun():
 # kde_fun()
 # hmm_fun()
 # rnn_fun()
-rnn2_fun()
+ocr_fun()
 
 # if __name__ == '__main__':
 #     while True:
 #         print("1. KDE")
 #         print("2. HMM")
 #         print("3. RNN")
-#         print("4. Exit")
+#         print("4. OCR")
+#         print("5. Exit")
 #         choice = int(input("Enter your choice: "))
 #         if choice == 1:
 #             kde_fun()
@@ -405,6 +418,8 @@ rnn2_fun()
 #         elif choice == 3:
 #             rnn_fun()
 #         elif choice == 4:
+#             ocr_fun()
+#         elif choice == 5:
 #             break
 #         else:
 #             print("Invalid choice. Please enter again.")
