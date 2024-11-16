@@ -61,26 +61,38 @@ def kde_fun():
     plt.grid(True)
     plt.savefig('./figures/KDE_original_data.png')
 
-
     kde = KDE(kernel='triangular', bandwidth=1)
-    kde.fit(data)
-    kde.visualize(x_range=(-3, 3), y_range=(-3, 3), resolution=100)
-
-    kde = KDE(kernel='gaussian', bandwidth=1)
     kde.fit(data)
     kde.visualize(x_range=(-3, 3), y_range=(-3, 3), resolution=100)
 
     kde = KDE(kernel='box', bandwidth=1)
     kde.fit(data)
     kde.visualize(x_range=(-3, 3), y_range=(-3, 3), resolution=100)
+    
+    kde = KDE(kernel='gaussian', bandwidth=1)
+    kde.fit(data)
+    kde.visualize(x_range=(-3, 3), y_range=(-3, 3), resolution=100)
 
-    point = np.array([1, 1])
-    density = kde.predict(point)
-    print(f"Density at {point}: {density}")
 
-    point = np.array([0, 0])
-    density = kde.predict(point)
-    print(f"Density at {point}: {density}")
+    kde = KDE(kernel='triangular', bandwidth=0.5)
+    kde.fit(data)
+    kde.visualize(x_range=(-3, 3), y_range=(-3, 3), resolution=100)
+
+    kde = KDE(kernel='box', bandwidth=0.5)
+    kde.fit(data)
+    kde.visualize(x_range=(-3, 3), y_range=(-3, 3), resolution=100)
+
+    kde = KDE(kernel='gaussian', bandwidth=0.5)
+    kde.fit(data)
+    kde.visualize(x_range=(-3, 3), y_range=(-3, 3), resolution=100)
+
+    # point = np.array([1, 1])
+    # density = kde.predict(point)
+    # print(f"Density at {point}: {density}")
+
+    # point = np.array([0, 0])
+    # density = kde.predict(point)
+    # print(f"Density at {point}: {density}")
 
     for k in [2, 5, 10]:
         gmm_model = Gmm(k=k, n_iter=100)
@@ -88,7 +100,6 @@ def kde_fun():
 
         memberships = gmm_model.getMembership()
         memberships = np.argmax(memberships, axis=1)
-        
 
         plt.figure(figsize=(8, 8))
         plt.scatter(data[:, 0], data[:, 1], s=5, alpha=0.6, c=memberships, cmap='viridis')
@@ -199,8 +210,11 @@ def rnn_fun():
         return total_loss / len(data_loader.dataset)
 
     data, labels = generate_bit_count_data()
-    train_data, temp_data, train_labels, temp_labels = train_test_split(data, labels, test_size=0.2, random_state=42)
-    val_data, test_data, val_labels, test_labels = train_test_split(temp_data, temp_labels, test_size=0.5, random_state=42)
+    train_size = int(0.8 * len(data))
+    val_size = int(0.1 * len(data))
+    
+    train_data, val_data, test_data = data[:train_size], data[train_size:train_size + val_size], data[train_size + val_size:]
+    train_labels, val_labels, test_labels = labels[:train_size], labels[train_size:train_size + val_size], labels[train_size + val_size:]
 
     train_dataset = BitCountingDataset(train_data, train_labels)
     val_dataset = BitCountingDataset(val_data, val_labels)
@@ -209,6 +223,7 @@ def rnn_fun():
     batch_size = 64
     train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True, collate_fn=collate_fn_rnn)
     val_loader = DataLoader(val_dataset, batch_size=batch_size, shuffle=False, collate_fn=collate_fn_rnn)
+    test_loader = DataLoader(test_dataset, batch_size=batch_size, shuffle=False, collate_fn=collate_fn_rnn)
 
     model = BitCounterRNN(input_size=1, hidden_size=32, num_layers=1)
     criterion = nn.L1Loss()
@@ -217,21 +232,32 @@ def rnn_fun():
     model.to(device)
     num_epochs = 10
 
-    for epoch in range(num_epochs):
-        model.train()
-        total_train_loss = 0
-        for sequences, labels, lengths in train_loader:
-            sequences, labels, lengths = sequences.to(device), labels.to(device), lengths.to(device)
-            outputs = model(sequences, lengths)
-            loss = criterion(outputs.squeeze(), labels.squeeze(-1))
-            optimizer.zero_grad()
-            loss.backward()
-            optimizer.step()
-            total_train_loss += loss.item() * sequences.size(0)
-        
-        train_loss = total_train_loss / len(train_loader.dataset)
-        val_loss = evaluate(model, val_loader, criterion, device)
-        print(f"Epoch [{epoch+1}/{num_epochs}], Train Loss: {train_loss:.4f}, Validation Loss: {val_loss:.4f}")
+    def train(model, train_loader, val_loader, criterion, optimizer, num_epochs, device):
+        for epoch in range(num_epochs):
+            model.train()
+            total_train_loss = 0
+            train_progress = tqdm(train_loader, desc=f"Epoch [{epoch+1}/{num_epochs}]")
+            
+            for sequences, labels, lengths in train_progress:
+                sequences, labels, lengths = sequences.to(device), labels.to(device), lengths.to(device)
+                outputs = model(sequences, lengths)
+                loss = criterion(outputs.squeeze(), labels.squeeze(-1))
+                optimizer.zero_grad()
+                loss.backward()
+                optimizer.step()
+                total_train_loss += loss.item() * sequences.size(0)
+                train_progress.set_postfix(loss=loss.item())
+            
+            train_loss = total_train_loss / len(train_loader.dataset)
+            val_loss = evaluate(model, val_loader, criterion, device)
+            
+            print(f"Epoch [{epoch+1}/{num_epochs}], Train Loss: {train_loss:.4f}, Validation Loss: {val_loss:.4f}")
+
+
+    train(model, train_loader, val_loader, criterion, optimizer, num_epochs, device)
+
+    test_loss = evaluate(model, test_loader, criterion, device)
+    print(f"Test Loss (MAE): {test_loss:.4f}")
 
     def generate_out_of_distribution_data(start_len=1, end_len=32, samples_per_length=1000):
         data, labels = [], []
@@ -243,17 +269,20 @@ def rnn_fun():
                 labels.append(label)
         return data, labels
 
-    ood_data, ood_labels = generate_out_of_distribution_data()
+    gen_data, gen_labels = generate_out_of_distribution_data()
     lengths = list(range(1, 33))
     mae_per_length = []
 
     for length in lengths:
-        length_data = [seq for seq in ood_data if len(seq) == length]
-        length_labels = [label for seq, label in zip(ood_data, ood_labels) if len(seq) == length]
+        length_data = []
+        length_labels = []
+        for seq, label in zip(gen_data, gen_labels):
+            if len(seq) == length:
+                length_data.append(seq)
+                length_labels.append(label)
         
         length_dataset = BitCountingDataset(length_data, length_labels)
         length_loader = DataLoader(length_dataset, batch_size=batch_size, shuffle=False, collate_fn=collate_fn_rnn)
-        
         mae = evaluate(model, length_loader, criterion, device)
         mae_per_length.append(mae)
 
@@ -302,8 +331,20 @@ def ocr_fun():
         return image_paths, labels
 
     image_paths, labels = create_image_label_lists(image_dir)
-    max_word_length = max(len(label) for label in labels)
+
+    max_word_length = 0
+    for i in range(len(labels)):
+        max_word_length = max(max_word_length, len(labels[i]))
+
     print(f"Max Word Length: {max_word_length}")
+
+    np.random.seed(0)
+    temp_paths = image_paths.copy()
+    temp_labels = labels.copy()
+    perm = np.random.permutation(len(image_paths))
+    for i in range(len(image_paths)):
+        image_paths[i] = temp_paths[perm[i]]
+        labels[i] = temp_labels[perm[i]]
 
     train_size = int(0.8 * len(image_paths))
     val_size = int(0.1 * len(image_paths))
@@ -320,7 +361,7 @@ def ocr_fun():
     train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True)
     val_loader = DataLoader(val_dataset, batch_size=batch_size, shuffle=False)
     test_loader = DataLoader(test_dataset, batch_size=batch_size, shuffle=False)
-
+    
     def decode_label(one_hot_encoded):
         char_map = "@ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz"
         decoded = ""
@@ -343,6 +384,34 @@ def ocr_fun():
     criterion = nn.CrossEntropyLoss(weight=weigth)
     optimizer = torch.optim.Adam(model.parameters(), lr=0.001)
 
+    def evaluate(model, data_loader, criterion, device, print_output=False):
+        model.eval()
+        total_loss = 0
+        correct_chars = 0
+        total_chars = 0
+        with torch.no_grad():
+            for images, labels in data_loader:
+                images, labels = images.to(device), labels.to(device)
+                outputs = model(images)
+                outputs = outputs.permute(0, 2, 1)
+                labels = labels.permute(0, 2, 1)
+                loss = criterion(outputs, labels)
+                total_loss += loss.item()
+                outputs = outputs.permute(0, 2, 1)
+                labels = labels.permute(0, 2, 1)
+                for i in range(len(labels)):
+                    predicted_label = decode_label(outputs[i])
+                    true_label = decode_label(labels[i])
+                    if print_output and i < 10:
+                        print(predicted_label, "-> Predicted")
+                        print(true_label, "-> True")
+                    for j in range(len(true_label)):
+                        if j < len(predicted_label) and predicted_label[j] == true_label[j]:
+                            correct_chars += 1
+                        total_chars += 1
+        avg_correct_chars = correct_chars / total_chars
+        return total_loss / len(data_loader), avg_correct_chars
+
     def train(model, train_loader, val_loader, criterion, optimizer, num_epochs=10, device='cuda'):
         model.to(device)
         
@@ -364,32 +433,7 @@ def ocr_fun():
             
             train_loss /= len(train_loader)
 
-            model.eval()
-            val_loss = 0
-            correct_chars = 0
-            total_chars = 0
-            with torch.no_grad():
-                for images, labels in val_loader:
-                    images, labels = images.to(device), labels.to(device)
-                    outputs = model(images)
-                    outputs = outputs.permute(0, 2, 1)
-                    labels = labels.permute(0, 2, 1)
-                    val_loss += criterion(outputs, labels).item()
-                    outputs = outputs.permute(0, 2, 1)
-                    labels = labels.permute(0, 2, 1)
-                    for i in range(len(labels)):
-                        predicted_label = decode_label(outputs[i])
-                        true_label = decode_label(labels[i])
-                        
-                        if i < 5000 and i % 500 == 0:
-                            print(f"Predicted: {predicted_label}, True: {true_label}")
-                        for j in range(len(true_label)):
-                            if j < len(predicted_label) and predicted_label[j] == true_label[j]:
-                                correct_chars += 1
-                            total_chars += 1
-
-            val_loss /= len(val_loader)
-            avg_correct_chars = correct_chars / total_chars
+            val_loss, avg_correct_chars = evaluate(model, val_loader, criterion, device)
             print(f"Epoch [{epoch+1}/{num_epochs}], Train Loss: {train_loss:.4f}, Val Loss: {val_loss:.4f}, Avg Correct Chars in Val: {avg_correct_chars:.4f}")
 
     def random_baseline_accuracy(labels):
@@ -407,6 +451,9 @@ def ocr_fun():
     print(f"Random Baseline Accuracy: {random_accuracy:.4f}")
 
     train(model, train_loader, val_loader, criterion, optimizer, num_epochs=10, device=device)
+
+    test_loss, avg_correct_chars = evaluate(model, test_loader, criterion, device, print_output=True)
+    print(f"Test Loss: {test_loss:.4f}, Avg Correct Chars in Test: {avg_correct_chars:.4f}")
 
 
 
