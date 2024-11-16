@@ -51,7 +51,6 @@ def kde_fun():
 
     data = generate_synthetic_data()
 
-
     plt.figure(figsize=(8, 8))
     plt.scatter(data[:, 0], data[:, 1], s=5, alpha=0.6, color='black')
     plt.xlabel('X')
@@ -63,8 +62,17 @@ def kde_fun():
     plt.savefig('./figures/KDE_original_data.png')
 
 
-    kde = KDE(kernel='gaussian', bandwidth=0.5)
+    kde = KDE(kernel='triangular', bandwidth=1)
     kde.fit(data)
+    kde.visualize(x_range=(-3, 3), y_range=(-3, 3), resolution=100)
+
+    kde = KDE(kernel='gaussian', bandwidth=1)
+    kde.fit(data)
+    kde.visualize(x_range=(-3, 3), y_range=(-3, 3), resolution=100)
+
+    kde = KDE(kernel='box', bandwidth=1)
+    kde.fit(data)
+    kde.visualize(x_range=(-3, 3), y_range=(-3, 3), resolution=100)
 
     point = np.array([1, 1])
     density = kde.predict(point)
@@ -74,39 +82,23 @@ def kde_fun():
     density = kde.predict(point)
     print(f"Density at {point}: {density}")
 
-    kde.visualize(x_range=(-3, 3), y_range=(-3, 3), resolution=100)
-
-    def plot_gmm(data, means, covariances, title, save_path):
-        plt.figure(figsize=(8, 8))
-        plt.scatter(data[:, 0], data[:, 1], s=5, alpha=0.6, color="blue", label="Data Points")
-        colors = ['red', 'green', 'orange', 'purple', 'cyan']
-        
-        for i, (mean, cov) in enumerate(zip(means, covariances)):
-            color = colors[i % len(colors)]
-            eigvals, eigvecs = np.linalg.eigh(cov)
-            angle = np.degrees(np.arctan2(eigvecs[0, 1], eigvecs[0, 0]))
-            width, height = 2 * np.sqrt(eigvals)
-            
-            ellip = Ellipse(xy=mean, width=width, height=height, angle=angle, color=color, alpha=0.3)
-            plt.gca().add_patch(ellip)
-            plt.scatter(mean[0], mean[1], c=color, s=100, marker='x', label=f"Component {i+1}")
-        
-        plt.xlabel("X-axis")
-        plt.ylabel("Y-axis")
-        plt.title(title)
-        plt.legend()
-        plt.axis("equal")
-        plt.savefig(save_path)
-
-
     for k in [2, 5, 10]:
         gmm_model = Gmm(k=k, n_iter=100)
         gmm_model.fit(data)
 
-        pi, mu, sigma = gmm_model.get_params()
-        plot_gmm(data, mu, sigma, f"GMM with {k} components", f"./figures/GMM_{k}_components.png")
+        memberships = gmm_model.getMembership()
+        memberships = np.argmax(memberships, axis=1)
         
-    plt.show()
+
+        plt.figure(figsize=(8, 8))
+        plt.scatter(data[:, 0], data[:, 1], s=5, alpha=0.6, c=memberships, cmap='viridis')
+        plt.xlabel('X')
+        plt.ylabel('Y')
+        plt.xlim(-4, 4)
+        plt.ylim(-4, 4)
+        plt.title(f'GMM Clustering with K={k}')
+        plt.grid(True)
+        plt.savefig(f'./figures/GMM_K_{k}.png')
 
 def hmm_fun():
     def extract_mfcc(file_path, n_mfcc=13):
@@ -129,10 +121,8 @@ def hmm_fun():
         plt.xlabel('Time')
 
     for digit in data:
-        plt.figure(figsize=(8, 8))
-        for i, mfcc in enumerate(data[digit][:3]):
-            plt.subplot(3, 1, i+1)
-            plot_mfcc(mfcc, title=f'Digit {digit} - Sample {i+1}')
+        plt.figure(figsize=(12, 8))
+        plot_mfcc(data[digit][0], title=f'Digit {digit}')
         plt.tight_layout()  
         plt.savefig(f'./figures/Digit_{digit}_MFCC.png')
 
@@ -140,7 +130,9 @@ def hmm_fun():
 
     for digit, features in data.items():
         X = np.concatenate(features)
-        lengths = [len(f) for f in features]
+        lengths = []
+        for feature in features:
+            lengths.append(feature.shape[0])
         model = hmm.GaussianHMM(n_components=5, covariance_type="diag", n_iter=100)
         model.fit(X, lengths)
         models[digit] = model
@@ -164,9 +156,13 @@ def hmm_fun():
         accuracy = correct / total
         return accuracy
 
-    data_list = [(digit, mfcc) for digit, features in data.items() for mfcc in features]
+    data_list = []
+    for digit, features in data.items():
+        for mfcc in features:
+            data_list.append((digit, mfcc))
 
-    train_list, test_list = train_test_split(data_list, test_size=0.2)
+    train_size = int(0.8 * len(data_list))
+    train_list, test_list = data_list[:train_size], data_list[train_size:]
 
     train_data = {str(i): [] for i in range(10)}
     test_data = {str(i): [] for i in range(10)}
@@ -339,9 +335,6 @@ def ocr_fun():
         weigths = torch.ones(53, dtype=torch.float)
         char_map = "@ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz"
         weigths[0] = 0.2
-        # weigths[char_map.index('h')] = 1.0
-        # weigths[char_map.index('b')] = 1.0
-        # weigths[char_map.index('H')] = 1.0
         return weigths
 
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -375,8 +368,6 @@ def ocr_fun():
             val_loss = 0
             correct_chars = 0
             total_chars = 0
-            length_true = 0
-            length_false = 0
             with torch.no_grad():
                 for images, labels in val_loader:
                     images, labels = images.to(device), labels.to(device)
@@ -390,49 +381,57 @@ def ocr_fun():
                         predicted_label = decode_label(outputs[i])
                         true_label = decode_label(labels[i])
                         
-                        if i < 5000 and i % 100 == 0:
+                        if i < 5000 and i % 500 == 0:
                             print(f"Predicted: {predicted_label}, True: {true_label}")
                         for j in range(len(true_label)):
                             if j < len(predicted_label) and predicted_label[j] == true_label[j]:
                                 correct_chars += 1
                             total_chars += 1
 
-                        if len(predicted_label) == len(true_label):
-                            length_true += 1
-                        else:
-                            length_false += 1
-
             val_loss /= len(val_loader)
             avg_correct_chars = correct_chars / total_chars
-            length_accuracy = length_true / (length_true + length_false)
-            print(f"Epoch [{epoch+1}/{num_epochs}], Train Loss: {train_loss:.4f}, Val Loss: {val_loss:.4f}, Avg Correct Chars: {avg_correct_chars:.4f}")
-            print(f"Length Accuracy: {length_accuracy:.4f}")
+            print(f"Epoch [{epoch+1}/{num_epochs}], Train Loss: {train_loss:.4f}, Val Loss: {val_loss:.4f}, Avg Correct Chars in Val: {avg_correct_chars:.4f}")
+
+    def random_baseline_accuracy(labels):
+        correct_chars = 0
+        total_chars = 0
+        for label in labels:
+            predicted_label = ''.join(np.random.choice(list('ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz'), len(label)))
+            for i in range(len(label)):
+                if predicted_label[i] == label[i]:
+                    correct_chars += 1
+                total_chars += 1
+        return correct_chars / total_chars
+    
+    random_accuracy = random_baseline_accuracy(val_labels)
+    print(f"Random Baseline Accuracy: {random_accuracy:.4f}")
 
     train(model, train_loader, val_loader, criterion, optimizer, num_epochs=10, device=device)
+
 
 
 # kde_fun()
 # hmm_fun()
 # rnn_fun()
-ocr_fun()
+# ocr_fun()
 
-# if __name__ == '__main__':
-#     while True:
-#         print("1. KDE")
-#         print("2. HMM")
-#         print("3. RNN")
-#         print("4. OCR")
-#         print("5. Exit")
-#         choice = int(input("Enter your choice: "))
-#         if choice == 1:
-#             kde_fun()
-#         elif choice == 2:
-#             hmm_fun()
-#         elif choice == 3:
-#             rnn_fun()
-#         elif choice == 4:
-#             ocr_fun()
-#         elif choice == 5:
-#             break
-#         else:
-#             print("Invalid choice. Please enter again.")
+if __name__ == '__main__':
+    while True:
+        print("1. KDE")
+        print("2. HMM")
+        print("3. RNN")
+        print("4. OCR")
+        print("5. Exit")
+        choice = int(input("Enter your choice: "))
+        if choice == 1:
+            kde_fun()
+        elif choice == 2:
+            hmm_fun()
+        elif choice == 3:
+            rnn_fun()
+        elif choice == 4:
+            ocr_fun()
+        elif choice == 5:
+            break
+        else:
+            print("Invalid choice. Please enter again.")
