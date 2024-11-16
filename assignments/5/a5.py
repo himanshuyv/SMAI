@@ -279,7 +279,7 @@ def ocr_fun():
             img = Image.new('L', image_size, color=255)
             draw = ImageDraw.Draw(img)
             font = ImageFont.load_default()
-            font_size = 28
+            font_size = 24
             font = ImageFont.truetype("arial.ttf", font_size)
             bbox = draw.textbbox((0, 0), word, font=font)
             x = (image_size[0] - (bbox[2] - bbox[0])) // 2
@@ -288,22 +288,21 @@ def ocr_fun():
             img.save(os.path.join(image_dir, f"{word}.png")) 
 
     image_dir = "./../../data/external/word_images"
-    # word_list = words.words()[:100000]
+    # word_list = words.words()
+    # word_list = list(set(word_list))
+    # word_list = word_list[:100000]
     # generate_word_images(word_list, image_dir)
 
     def create_image_label_lists(image_dir):
         image_paths = []
         labels = []
-        count = 0
         for filename in os.listdir(image_dir):
             if filename.endswith(".png"):
+                if ('-' in filename) or ('_' in filename):
+                    continue
                 label = os.path.splitext(filename)[0]
                 image_paths.append(os.path.join(image_dir, filename))
                 labels.append(label)
-                count += 1
-
-            # if count == 1000:
-            #     break
         return image_paths, labels
 
     image_paths, labels = create_image_label_lists(image_dir)
@@ -338,7 +337,11 @@ def ocr_fun():
     
     def get_weights(labels):
         weigths = torch.ones(53, dtype=torch.float)
-        weigths[0] = 0.1
+        char_map = "@ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz"
+        weigths[0] = 0.2
+        # weigths[char_map.index('h')] = 1.0
+        # weigths[char_map.index('b')] = 1.0
+        # weigths[char_map.index('H')] = 1.0
         return weigths
 
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -372,7 +375,8 @@ def ocr_fun():
             val_loss = 0
             correct_chars = 0
             total_chars = 0
-            
+            length_true = 0
+            length_false = 0
             with torch.no_grad():
                 for images, labels in val_loader:
                     images, labels = images.to(device), labels.to(device)
@@ -388,12 +392,21 @@ def ocr_fun():
                         
                         if i < 5000 and i % 100 == 0:
                             print(f"Predicted: {predicted_label}, True: {true_label}")
-                        correct_chars += sum(p == t for p, t in zip(predicted_label, true_label))
-                        total_chars += len(true_label)
+                        for j in range(len(true_label)):
+                            if j < len(predicted_label) and predicted_label[j] == true_label[j]:
+                                correct_chars += 1
+                            total_chars += 1
+
+                        if len(predicted_label) == len(true_label):
+                            length_true += 1
+                        else:
+                            length_false += 1
 
             val_loss /= len(val_loader)
             avg_correct_chars = correct_chars / total_chars
+            length_accuracy = length_true / (length_true + length_false)
             print(f"Epoch [{epoch+1}/{num_epochs}], Train Loss: {train_loss:.4f}, Val Loss: {val_loss:.4f}, Avg Correct Chars: {avg_correct_chars:.4f}")
+            print(f"Length Accuracy: {length_accuracy:.4f}")
 
     train(model, train_loader, val_loader, criterion, optimizer, num_epochs=10, device=device)
 

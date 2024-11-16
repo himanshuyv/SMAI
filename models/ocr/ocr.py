@@ -39,7 +39,7 @@ class OCRDataset(Dataset):
     
 
 class OCRModel(nn.Module):
-    def __init__(self, num_classes=53, max_length=20, hidden_dim=256, num_layers=2, dropout=0.3):
+    def __init__(self, num_classes=53, max_length=20, hidden_dim=256, num_layers=2, dropout=0.2):
         super(OCRModel, self).__init__()
         self.num_classes = num_classes
         self.max_length = max_length
@@ -53,13 +53,15 @@ class OCRModel(nn.Module):
             nn.MaxPool2d(2, 2),
             nn.Conv2d(64, 128, kernel_size=3, stride=1, padding=1),
             nn.ReLU(),
+            nn.MaxPool2d(2, 2),
+            nn.Conv2d(128, 256, kernel_size=3, stride=1, padding=1),
+            nn.ReLU(),
             nn.MaxPool2d(2, 2)
         )
         self.flatten = nn.Flatten(start_dim=1)
-        self.fc = nn.Linear(128 * 32 * 8, hidden_dim)
-        # self.rnn = nn.GRU(hidden_dim, hidden_dim, batch_first=True)
+        self.fc = nn.Linear(256 * 16 * 4 , hidden_dim)
         self.rnn = nn.RNN(hidden_dim, hidden_dim, num_layers=num_layers, batch_first=True, dropout=dropout)
-        # self.layernorm = nn.LayerNorm(hidden_dim)
+        self.layernorm = nn.LayerNorm(hidden_dim)
         self.fc_out = nn.Linear(hidden_dim, num_classes)
 
     def forward(self, x):
@@ -67,6 +69,6 @@ class OCRModel(nn.Module):
         x = self.flatten(x)
         x = self.fc(x).unsqueeze(1).repeat(1, self.max_length, 1)
         rnn_out, _ = self.rnn(x)
-        # rnn_out = self.layernorm(rnn_out)
+        rnn_out = self.layernorm(rnn_out)
         out = self.fc_out(rnn_out)
         return out
