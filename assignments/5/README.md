@@ -140,6 +140,66 @@ def evaluate_accuracy(data):
 Recognition Accuracy on Test Set: 96.33%
 ``` 
 
+Accuracy on my recordings if I am adding 5 samples for each digit in only the test set
+```
+Recognition Accuracy on My Recordings: 10.00%
+```
+
+Predictions on my recordings
+```
+True Digit: 0, Predicted Digit: 1
+True Digit: 0, Predicted Digit: 1
+True Digit: 0, Predicted Digit: 1
+True Digit: 0, Predicted Digit: 1
+True Digit: 0, Predicted Digit: 1
+True Digit: 1, Predicted Digit: 1
+True Digit: 1, Predicted Digit: 1
+True Digit: 1, Predicted Digit: 1
+True Digit: 1, Predicted Digit: 1
+True Digit: 1, Predicted Digit: 1
+True Digit: 2, Predicted Digit: 1
+True Digit: 2, Predicted Digit: 1
+True Digit: 2, Predicted Digit: 1
+True Digit: 2, Predicted Digit: 1
+True Digit: 2, Predicted Digit: 1
+True Digit: 3, Predicted Digit: 1
+True Digit: 3, Predicted Digit: 1
+True Digit: 3, Predicted Digit: 1
+True Digit: 3, Predicted Digit: 1
+True Digit: 3, Predicted Digit: 1
+True Digit: 4, Predicted Digit: 0
+True Digit: 4, Predicted Digit: 1
+True Digit: 4, Predicted Digit: 0
+True Digit: 4, Predicted Digit: 0
+True Digit: 4, Predicted Digit: 0
+True Digit: 5, Predicted Digit: 1
+True Digit: 5, Predicted Digit: 1
+True Digit: 5, Predicted Digit: 1
+True Digit: 5, Predicted Digit: 1
+True Digit: 5, Predicted Digit: 1
+True Digit: 6, Predicted Digit: 1
+True Digit: 6, Predicted Digit: 1
+True Digit: 6, Predicted Digit: 1
+True Digit: 6, Predicted Digit: 0
+True Digit: 6, Predicted Digit: 4
+True Digit: 7, Predicted Digit: 1
+True Digit: 7, Predicted Digit: 1
+True Digit: 7, Predicted Digit: 1
+True Digit: 7, Predicted Digit: 1
+True Digit: 7, Predicted Digit: 1
+True Digit: 8, Predicted Digit: 1
+True Digit: 8, Predicted Digit: 1
+True Digit: 8, Predicted Digit: 1
+True Digit: 8, Predicted Digit: 1
+True Digit: 8, Predicted Digit: 1
+True Digit: 9, Predicted Digit: 1
+True Digit: 9, Predicted Digit: 1
+True Digit: 9, Predicted Digit: 1
+True Digit: 9, Predicted Digit: 1
+True Digit: 9, Predicted Digit: 1
+```
+
+
 ## RNNs
 
 ### Counting Bits

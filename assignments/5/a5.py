@@ -184,6 +184,21 @@ def hmm_fun():
     accuracy = evaluate_accuracy(test_data)
     print(f"Recognition Accuracy on Test Set: {accuracy * 100:.2f}%")
 
+    my_recordings_path = './../../data/external/myrecordings'
+    my_recordings_data = {str(i): [] for i in range(10)}
+    for file_path in glob.glob(os.path.join(my_recordings_path, '*.wav')):
+        digit = file_path.replace('\\','/').split('/')[-1][0]
+        mfcc_features = extract_mfcc(file_path)
+        my_recordings_data[digit].append(mfcc_features)
+    
+    accuracy = evaluate_accuracy(my_recordings_data)
+    print(f"Recognition Accuracy on My Recordings: {accuracy * 100:.2f}%")
+
+    print("Predictions on My Recordings:")
+    for digit, features in my_recordings_data.items():
+        for mfcc in features:
+            prediction = predict_digit(mfcc)
+            print(f"True Digit: {digit}, Predicted Digit: {prediction}")
 
 def rnn_fun():
     def generate_bit_count_data(num_samples=100000, max_len=16):
