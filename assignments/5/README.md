@@ -199,6 +199,22 @@ True Digit: 9, Predicted Digit: 1
 True Digit: 9, Predicted Digit: 1
 ```
 
+On adding 4 of my recordings for each digit in the training set and 1 in the test set following results are obtained.
+```
+Recognition Accuracy on Test Set: 96.71%
+Recognition Accuracy on My Recordings: 90.00%
+Predictions on My Recordings:
+True Digit: 0, Predicted Digit: 0
+True Digit: 1, Predicted Digit: 1
+True Digit: 2, Predicted Digit: 2
+True Digit: 3, Predicted Digit: 3
+True Digit: 4, Predicted Digit: 0
+True Digit: 5, Predicted Digit: 5
+True Digit: 6, Predicted Digit: 6
+True Digit: 7, Predicted Digit: 7
+True Digit: 8, Predicted Digit: 8
+True Digit: 9, Predicted Digit: 9
+```
 
 ## RNNs
 
