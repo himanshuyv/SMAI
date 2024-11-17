@@ -1,11 +1,9 @@
 import numpy as np
 import matplotlib.pyplot as plt
-from matplotlib.patches import Ellipse
 import librosa
 import os
 import glob
 import seaborn as sns
-from sklearn.model_selection import train_test_split
 from hmmlearn import hmm
 from torch.utils.data import DataLoader
 import torch
@@ -40,12 +38,12 @@ def kde_fun():
 
 
         theta = np.random.uniform(0, 2*np.pi, num_samples_small_circle)
-        r = np.random.uniform(0, 0.2, num_samples_small_circle)
+        r = np.random.uniform(0, 0.25, num_samples_small_circle)
         x = r * np.cos(theta) + 1
         y = r * np.sin(theta) + 1
         data_small_circle = np.vstack((x, y)).T
         data = np.vstack((data_large_circle, data_small_circle))
-        noise_small_circle = np.random.normal(0, 0.1, (num_samples_small_circle, 2))
+        noise_small_circle = np.random.normal(0, 0.01, (num_samples_small_circle, 2))
         data_small_circle = data_small_circle + noise_small_circle
         return data
 
@@ -253,6 +251,13 @@ def rnn_fun():
             
             print(f"Epoch [{epoch+1}/{num_epochs}], Train Loss: {train_loss:.4f}, Validation Loss: {val_loss:.4f}")
 
+    def random_baseline(data_loader):
+        total_loss = 0
+        for sequences, labels, lengths in data_loader:
+            total_loss += torch.abs(torch.sum(sequences, dim=1) - labels.squeeze(-1)).sum().item()
+        return total_loss / len(data_loader.dataset)
+    
+    print(f"Random Baseline MAE: {random_baseline(val_loader)}")
 
     train(model, train_loader, val_loader, criterion, optimizer, num_epochs, device)
 
@@ -331,20 +336,12 @@ def ocr_fun():
         return image_paths, labels
 
     image_paths, labels = create_image_label_lists(image_dir)
-
-    max_word_length = 0
-    for i in range(len(labels)):
-        max_word_length = max(max_word_length, len(labels[i]))
-
+    max_word_length = max(len(label) for label in labels)
     print(f"Max Word Length: {max_word_length}")
 
-    np.random.seed(0)
-    temp_paths = image_paths.copy()
-    temp_labels = labels.copy()
-    perm = np.random.permutation(len(image_paths))
-    for i in range(len(image_paths)):
-        image_paths[i] = temp_paths[perm[i]]
-        labels[i] = temp_labels[perm[i]]
+    image_paths_temp, labels_temp = np.array(image_paths), np.array(labels)
+    idx = np.random.permutation(len(image_paths_temp))
+    image_paths, labels = image_paths_temp[idx].tolist(), labels_temp[idx].tolist()
 
     train_size = int(0.8 * len(image_paths))
     val_size = int(0.1 * len(image_paths))
@@ -361,7 +358,7 @@ def ocr_fun():
     train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True)
     val_loader = DataLoader(val_dataset, batch_size=batch_size, shuffle=False)
     test_loader = DataLoader(test_dataset, batch_size=batch_size, shuffle=False)
-    
+
     def decode_label(one_hot_encoded):
         char_map = "@ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz"
         decoded = ""
@@ -376,6 +373,9 @@ def ocr_fun():
         weigths = torch.ones(53, dtype=torch.float)
         char_map = "@ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz"
         weigths[0] = 0.2
+        # weigths[char_map.index('h')] = 1.0
+        # weigths[char_map.index('b')] = 1.0
+        # weigths[char_map.index('H')] = 1.0
         return weigths
 
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -402,19 +402,18 @@ def ocr_fun():
                 for i in range(len(labels)):
                     predicted_label = decode_label(outputs[i])
                     true_label = decode_label(labels[i])
-                    if print_output and i < 10:
-                        print(predicted_label, "-> Predicted")
-                        print(true_label, "-> True")
+                    if print_output:
+                        print(f"Predicted: {predicted_label}, True: {true_label}")
                     for j in range(len(true_label)):
                         if j < len(predicted_label) and predicted_label[j] == true_label[j]:
                             correct_chars += 1
                         total_chars += 1
         avg_correct_chars = correct_chars / total_chars
-        return total_loss / len(data_loader), avg_correct_chars
+        total_loss = total_loss / len(data_loader)
+        return total_loss, avg_correct_chars
 
     def train(model, train_loader, val_loader, criterion, optimizer, num_epochs=10, device='cuda'):
         model.to(device)
-        
         for epoch in range(num_epochs):
             model.train()
             train_loss = 0
@@ -432,9 +431,8 @@ def ocr_fun():
                 train_loss += loss.item()
             
             train_loss /= len(train_loader)
-
             val_loss, avg_correct_chars = evaluate(model, val_loader, criterion, device)
-            print(f"Epoch [{epoch+1}/{num_epochs}], Train Loss: {train_loss:.4f}, Val Loss: {val_loss:.4f}, Avg Correct Chars in Val: {avg_correct_chars:.4f}")
+            print(f"Epoch [{epoch+1}/{num_epochs}], Train Loss: {train_loss:.4f}, Val Loss: {val_loss:.4f}, ANCC in Val: {avg_correct_chars:.4f}")
 
     def random_baseline_accuracy(labels):
         correct_chars = 0
@@ -453,7 +451,7 @@ def ocr_fun():
     train(model, train_loader, val_loader, criterion, optimizer, num_epochs=10, device=device)
 
     test_loss, avg_correct_chars = evaluate(model, test_loader, criterion, device, print_output=True)
-    print(f"Test Loss: {test_loss:.4f}, Avg Correct Chars in Test: {avg_correct_chars:.4f}")
+    print(f"Test Loss: {test_loss:.4f}, ANCC in Test: {avg_correct_chars:.4f}")
 
 
 

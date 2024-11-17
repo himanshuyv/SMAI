@@ -53,10 +53,13 @@ class OCRModel(nn.Module):
             nn.MaxPool2d(2, 2),
             nn.Conv2d(64, 128, kernel_size=3, stride=1, padding=1),
             nn.ReLU(),
+            nn.MaxPool2d(2, 2),
+            nn.Conv2d(128, 256, kernel_size=3, stride=1, padding=1),
+            nn.ReLU(),
             nn.MaxPool2d(2, 2)
         )
         self.flatten = nn.Flatten(start_dim=1)
-        self.fc = nn.Linear(128 * 32 * 8, hidden_dim)
+        self.fc = nn.Linear(256 * 16 * 4 , hidden_dim)
         self.rnn = nn.RNN(hidden_dim, hidden_dim, num_layers=num_layers, batch_first=True, dropout=dropout)
         self.layernorm = nn.LayerNorm(hidden_dim)
         self.fc_out = nn.Linear(hidden_dim, num_classes)
