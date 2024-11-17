@@ -38,6 +38,6 @@ class KDE:
         # plt.scatter(self.data[:, 0], self.data[:, 1], s=5, color='red')
         plt.xlabel('X')
         plt.ylabel('Y')
-        plt.title(f'KDE Density Visualization ({self.kernel} kernel)')
+        plt.title(f'KDE Density Visualization ({self.kernel} kernel, bandwidth={self.bandwidth})')
         plt.colorbar(label='Density')
         plt.savefig(f'./figures/KDE_{self.kernel}_kernel_{int(self.bandwidth*100)}.png')

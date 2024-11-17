@@ -11,6 +11,7 @@ import torch.nn as nn
 from tqdm import tqdm
 from PIL import Image, ImageDraw, ImageFont
 from nltk.corpus import words
+import random
 
 
 import warnings
@@ -113,13 +114,13 @@ def hmm_fun():
     def extract_mfcc(file_path, n_mfcc=13):
         audio, sample_rate = librosa.load(file_path, sr=None)
         mfccs = librosa.feature.mfcc(y=audio, sr=sample_rate, n_mfcc=n_mfcc)
-        return mfccs.T 
+        return mfccs.T
 
     dataset_path = './../../data/external/recordings'
     data = {str(i): [] for i in range(10)}
 
     for file_path in glob.glob(os.path.join(dataset_path, '*.wav')):
-        digit = file_path.replace('\\','/').split('/')[-1][0]
+        digit = file_path.replace('\\', '/').split('/')[-1][0]
         mfcc_features = extract_mfcc(file_path)
         data[digit].append(mfcc_features)
 
@@ -132,16 +133,33 @@ def hmm_fun():
     for digit in data:
         plt.figure(figsize=(12, 8))
         plot_mfcc(data[digit][0], title=f'Digit {digit}')
-        plt.tight_layout()  
+        plt.tight_layout()
         plt.savefig(f'./figures/Digit_{digit}_MFCC.png')
 
-    models = {}
-
+    data_list = []
     for digit, features in data.items():
-        X = np.concatenate(features)
-        lengths = []
         for feature in features:
-            lengths.append(feature.shape[0])
+            data_list.append((digit, feature))
+
+    suffled_data_list = random.sample(data_list, len(data_list))
+    data_list = suffled_data_list
+
+    train_size = int(0.8 * len(data_list))
+    train_list = data_list[:train_size]
+    test_list = data_list[train_size:]
+
+    train_data = {str(i): [] for i in range(10)}
+    test_data = {str(i): [] for i in range(10)}
+
+    for digit, mfcc in train_list:
+        train_data[digit].append(mfcc)
+    for digit, mfcc in test_list:
+        test_data[digit].append(mfcc)
+
+    models = {}
+    for digit, features in train_data.items():
+        X = np.concatenate(features)
+        lengths = [feature.shape[0] for feature in features]
         model = hmm.GaussianHMM(n_components=5, covariance_type="diag", n_iter=100)
         model.fit(X, lengths)
         models[digit] = model
@@ -165,40 +183,25 @@ def hmm_fun():
         accuracy = correct / total
         return accuracy
 
-    data_list = []
-    for digit, features in data.items():
-        for mfcc in features:
-            data_list.append((digit, mfcc))
-
-    train_size = int(0.8 * len(data_list))
-    train_list, test_list = data_list[:train_size], data_list[train_size:]
-
-    train_data = {str(i): [] for i in range(10)}
-    test_data = {str(i): [] for i in range(10)}
-
-    for digit, mfcc in train_list:
-        train_data[digit].append(mfcc)
-    for digit, mfcc in test_list:
-        test_data[digit].append(mfcc)
-
-    accuracy = evaluate_accuracy(test_data)
-    print(f"Recognition Accuracy on Test Set: {accuracy * 100:.2f}%")
+    test_accuracy = evaluate_accuracy(test_data)
+    print(f"Recognition Accuracy on Test Set: {test_accuracy * 100:.2f}%")
 
     my_recordings_path = './../../data/external/myrecordings'
     my_recordings_data = {str(i): [] for i in range(10)}
     for file_path in glob.glob(os.path.join(my_recordings_path, '*.wav')):
-        digit = file_path.replace('\\','/').split('/')[-1][0]
+        digit = file_path.replace('\\', '/').split('/')[-1][0]
         mfcc_features = extract_mfcc(file_path)
         my_recordings_data[digit].append(mfcc_features)
-    
-    accuracy = evaluate_accuracy(my_recordings_data)
-    print(f"Recognition Accuracy on My Recordings: {accuracy * 100:.2f}%")
+
+    my_recordings_accuracy = evaluate_accuracy(my_recordings_data)
+    print(f"Recognition Accuracy on My Recordings: {my_recordings_accuracy * 100:.2f}%")
 
     print("Predictions on My Recordings:")
     for digit, features in my_recordings_data.items():
         for mfcc in features:
             prediction = predict_digit(mfcc)
             print(f"True Digit: {digit}, Predicted Digit: {prediction}")
+
 
 def rnn_fun():
     def generate_bit_count_data(num_samples=100000, max_len=16):

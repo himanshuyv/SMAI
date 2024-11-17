@@ -76,6 +76,15 @@ class KDE:
 
 ![GMM K=10](./figures/GMM_K_10.png) <br>
 
+- When we used 2 component in GMM then the model perfectly fits the data but boundaried are not captured by GMM.
+- On increasing the number of components GMM overfits.
+
+- KDE consistantly fits data for lower bandwidth with gaussian kernel. For other kernels it captures noise at random locations.
+
+- But for higher bandwidth KDE smooths out the details and tries to fit the data.
+
+
+
 ## HMMs
 
 ### Dataset
@@ -100,16 +109,15 @@ class KDE:
 
 ![Digit 9 MFCC](./figures/Digit_9_MFCC.png) <br>
 
+- HMMs are a good fit for recognizing spoken digits because speech changes over time, and HMMs are designed to handle data that follows a sequence. MFCC features capture how the sound of speech changes over time. Each digit has its own unique pattern in these features, which helps HMMs learn the different sounds in each digit. This makes HMMs effective at recognizing digits since they can understand the flow of speech.
+
 
 ### Model Architecture
 ```python
 models = {}
-
-for digit, features in data.items():
+for digit, features in train_data.items():
     X = np.concatenate(features)
-    lengths = []
-    for feature in features:
-        lengths.append(feature.shape[0])
+    lengths = [feature.shape[0] for feature in features]
     model = hmm.GaussianHMM(n_components=5, covariance_type="diag", n_iter=100)
     model.fit(X, lengths)
     models[digit] = model
@@ -137,7 +145,7 @@ def evaluate_accuracy(data):
 ### Metrics
 
 ```
-Recognition Accuracy on Test Set: 96.33%
+Recognition Accuracy on Test Set: 92.33%
 ``` 
 
 Accuracy on my recordings if I am adding 5 samples for each digit in only the test set
@@ -199,9 +207,11 @@ True Digit: 9, Predicted Digit: 1
 True Digit: 9, Predicted Digit: 1
 ```
 
+- The accuracy in the above case is less as the accent in the recording in the train dataset is different from my accent.
+
 On adding 4 of my recordings for each digit in the training set and 1 in the test set following results are obtained.
 ```
-Recognition Accuracy on Test Set: 96.71%
+Recognition Accuracy on Test Set: 91.12%
 Recognition Accuracy on My Recordings: 90.00%
 Predictions on My Recordings:
 True Digit: 0, Predicted Digit: 0
@@ -215,6 +225,8 @@ True Digit: 7, Predicted Digit: 7
 True Digit: 8, Predicted Digit: 8
 True Digit: 9, Predicted Digit: 9
 ```
+
+- On feeding my recordings as train data model also learns my accent and the accuracy increased drastically.
 
 ## RNNs
 
@@ -329,9 +341,14 @@ Random Baseline MAE: 2.5674
 Test MAE: 0.0509
 ```
 
+- Random Baseline MAE calculated above is random integer between (0, length of each label).
+- On calculating the it as random integer between (0, 16) the MAE was aroun 7.
+
 #### Task 4: Generalization
 
 ![Generalization](./figures/RNN_generalization.png) <br>
+
+- The model generalizes the till sequence length 19-20 but after that it is not able to generalize as it has only been trained till sequence length 16.
 
 ### Optical Character Recognition
 
@@ -526,3 +543,8 @@ Wakoze <-- Predicted Label
 ```
 Test Loss: 0.0532, ANCC in Test: 0.9585
 ```
+
+- The final accuracy(ANCC) that I got on train set is 95.85%.
+- The final accuracy(ANCC) that I got on val set is 95.86%.
+
+The random baseline accuracy that I got is 1.9% which is close to 100/52. This is because for each character there are 52 choices.
