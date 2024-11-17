@@ -20,7 +20,7 @@ import sys
 sys.path.append('./../../')
 from models.kde.kde import KDE
 from models.gmm.gmm import Gmm
-from models.rnn.rnn import BitCounterRNN, BitCountingDataset, collate_fn_rnn
+from models.rnn.rnn import RNNDataset, RNN
 from models.ocr.ocr import OCRModel, OCRDataset
 
 def kde_fun():
@@ -214,16 +214,16 @@ def rnn_fun():
     train_data, val_data, test_data = data[:train_size], data[train_size:train_size + val_size], data[train_size + val_size:]
     train_labels, val_labels, test_labels = labels[:train_size], labels[train_size:train_size + val_size], labels[train_size + val_size:]
 
-    train_dataset = BitCountingDataset(train_data, train_labels)
-    val_dataset = BitCountingDataset(val_data, val_labels)
-    test_dataset = BitCountingDataset(test_data, test_labels)
+    train_dataset = RNNDataset(train_data, train_labels)
+    val_dataset = RNNDataset(val_data, val_labels)
+    test_dataset = RNNDataset(test_data, test_labels)
 
     batch_size = 64
-    train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True, collate_fn=collate_fn_rnn)
-    val_loader = DataLoader(val_dataset, batch_size=batch_size, shuffle=False, collate_fn=collate_fn_rnn)
-    test_loader = DataLoader(test_dataset, batch_size=batch_size, shuffle=False, collate_fn=collate_fn_rnn)
+    train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True)
+    val_loader = DataLoader(val_dataset, batch_size=batch_size, shuffle=False)
+    test_loader = DataLoader(test_dataset, batch_size=batch_size, shuffle=False)
 
-    model = BitCounterRNN(input_size=1, hidden_size=32, num_layers=1)
+    model = RNN(input_size=1, hidden_size=32, num_layers=1)
     criterion = nn.L1Loss()
     optimizer = torch.optim.Adam(model.parameters(), lr=0.001)
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -249,20 +249,24 @@ def rnn_fun():
             train_loss = total_train_loss / len(train_loader.dataset)
             val_loss = evaluate(model, val_loader, criterion, device)
             
-            print(f"Epoch [{epoch+1}/{num_epochs}], Train Loss: {train_loss:.4f}, Validation Loss: {val_loss:.4f}")
+            print(f"Epoch [{epoch+1}/{num_epochs}], Train MAE: {train_loss:.4f}, Validation MAE: {val_loss:.4f}")
 
-    def random_baseline(data_loader):
-        total_loss = 0
+    def random_baseline_MAE(data_loader):
+        loss = 0
+        total = 0
         for sequences, labels, lengths in data_loader:
-            total_loss += torch.abs(torch.sum(sequences, dim=1) - labels.squeeze(-1)).sum().item()
-        return total_loss / len(data_loader.dataset)
+            for i in range(len(sequences)):
+                cur_pred = np.random.randint(0, lengths[i].item() + 1)
+                loss += np.abs(cur_pred - labels[i].item())
+                total += 1
+        return loss / total
     
-    print(f"Random Baseline MAE: {random_baseline(val_loader)}")
+    print(f"Random Baseline MAE: {random_baseline_MAE(val_loader)}")
 
     train(model, train_loader, val_loader, criterion, optimizer, num_epochs, device)
 
     test_loss = evaluate(model, test_loader, criterion, device)
-    print(f"Test Loss (MAE): {test_loss:.4f}")
+    print(f"Test MAE: {test_loss:.4f}")
 
     def generate_out_of_distribution_data(start_len=1, end_len=32, samples_per_length=1000):
         data, labels = [], []
@@ -286,8 +290,8 @@ def rnn_fun():
                 length_data.append(seq)
                 length_labels.append(label)
         
-        length_dataset = BitCountingDataset(length_data, length_labels)
-        length_loader = DataLoader(length_dataset, batch_size=batch_size, shuffle=False, collate_fn=collate_fn_rnn)
+        length_dataset = RNNDataset(length_data, length_labels)
+        length_loader = DataLoader(length_dataset, batch_size=batch_size, shuffle=False)
         mae = evaluate(model, length_loader, criterion, device)
         mae_per_length.append(mae)
 
@@ -295,7 +299,7 @@ def rnn_fun():
     plt.plot(lengths, mae_per_length, marker='o', color='b')
     plt.title('Model Generalization Across Sequence Lengths')
     plt.xlabel('Sequence Length')
-    plt.ylabel('Mean Absolute Error (MAE)')
+    plt.ylabel('Mean Absolute Error')
     plt.grid(True)
     plt.savefig('./figures/RNN_generalization.png')
     plt.show()
@@ -369,13 +373,9 @@ def ocr_fun():
             decoded += char_map[idx]
         return decoded
     
-    def get_weights(labels):
+    def get_weights():
         weigths = torch.ones(53, dtype=torch.float)
-        char_map = "@ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz"
         weigths[0] = 0.2
-        # weigths[char_map.index('h')] = 1.0
-        # weigths[char_map.index('b')] = 1.0
-        # weigths[char_map.index('H')] = 1.0
         return weigths
 
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -452,13 +452,6 @@ def ocr_fun():
 
     test_loss, avg_correct_chars = evaluate(model, test_loader, criterion, device, print_output=True)
     print(f"Test Loss: {test_loss:.4f}, ANCC in Test: {avg_correct_chars:.4f}")
-
-
-
-# kde_fun()
-# hmm_fun()
-# rnn_fun()
-# ocr_fun()
 
 if __name__ == '__main__':
     while True:

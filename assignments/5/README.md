@@ -161,40 +161,41 @@ def generate_bit_count_data(num_samples=100000, max_len=16):
 #### Task 2: Architecture
 
 ```python
-class BitCountingDataset(Dataset):
+class RNNDataset(Dataset):
     def __init__(self, sequences, labels):
         self.sequences = sequences
         self.labels = labels
+        self.max_length = max(len(seq) for seq in sequences)
 
     def __len__(self):
         return len(self.sequences)
 
     def __getitem__(self, idx):
-        sequence = torch.FloatTensor(self.sequences[idx]).unsqueeze(-1)
-        label = torch.FloatTensor([self.labels[idx]])
+        sequence = self.sequences[idx]
+        label = self.labels[idx]
         length = len(sequence)
-        return sequence, label, length
+        padded_sequence = torch.zeros((self.max_length, 1), dtype=torch.float32)
+        padded_sequence[:length, 0] = torch.FloatTensor(sequence)
 
-def collate_fn_rnn(batch):
-    sequences, labels, lengths = zip(*batch)
-    sequences_padded = pad_sequence(sequences, batch_first=True, padding_value=0)
-    labels = torch.stack(labels)
-    lengths = torch.tensor(lengths)
-    return sequences_padded, labels, lengths
+        label = torch.FloatTensor([label])
+        return padded_sequence, label, length
 
-class BitCounterRNN(nn.Module):
+
+class RNN(nn.Module):
     def __init__(self, input_size=1, hidden_size=32, num_layers=1):
-        super(BitCounterRNN, self).__init__()
+        super(RNN, self).__init__()
         self.rnn = nn.RNN(input_size, hidden_size, num_layers, batch_first=True)
         self.fc = nn.Linear(hidden_size, 1)
-        
+
     def forward(self, x, lengths):
-        packed_input = pack_padded_sequence(x, lengths.cpu(), batch_first=True, enforce_sorted=False)
-        packed_output, _ = self.rnn(packed_input)
-        out, _ = pad_packed_sequence(packed_output, batch_first=True)
-        out = out[torch.arange(out.size(0)), lengths - 1]
-        out = self.fc(out)
+        out, _ = self.rnn(x)
+        batch_size = x.size(0)
+        last_outputs = torch.zeros(batch_size, out.size(2), device=out.device)
+        for i, length in enumerate(lengths):
+            last_outputs[i] = out[i, length - 1]
+        out = self.fc(last_outputs)
         return out
+
 ```
 #### Task 3: Training
 
@@ -218,7 +219,8 @@ def train(model, train_loader, val_loader, criterion, optimizer, num_epochs, dev
         train_loss = total_train_loss / len(train_loader.dataset)
         val_loss = evaluate(model, val_loader, criterion, device)
         
-        print(f"Epoch [{epoch+1}/{num_epochs}], Train Loss: {train_loss:.4f}, Validation Loss: {val_loss:.4f}")
+        print(f"Epoch [{epoch+1}/{num_epochs}], Train MAE: {train_loss:.4f}, Validation MAE: {val_loss:.4f}")
+
 ```
 
 Output:
@@ -247,7 +249,8 @@ Epoch [10/10], Train Loss: 0.0533, Validation Loss: 0.0196
 ```
 
 ```
-Random Baseline MAE: 193.4052
+Random Baseline MAE: 2.5674
+Test MAE: 0.0509
 ```
 
 #### Task 4: Generalization
